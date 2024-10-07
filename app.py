@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 """ John Conway’s Game of Life """
-from tkinter import *
-import customtkinter
+from src.main_window import MainWindow
 
 
-app = customtkinter.CTk()
-
-app.title('John Conway’s Game of Life')
-app.geometry('720x480')
+app = MainWindow()
 
 
-
-app.mainloop()
+if __name__ == '__main__':
+    app.mainloop()
