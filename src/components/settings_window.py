@@ -11,16 +11,16 @@ class SettingsWindow:
 
         # Grid size settings
         Label(settings_window, text="Number of Rows").pack()
-        self.rows_slider = Scale(settings_window, from_=self.main_window.min_grid_size, to=self.main_window.max_grid_size,
-                                 label="Rows", orient=tk.HORIZONTAL, command=self.update_grid)
-        self.rows_slider.set(self.main_window.settings["rows"])
-        self.rows_slider.pack()
+        # self.rows_slider = Scale(settings_window, from_=self.main_window.min_grid_size, to=self.main_window.max_grid_size,
+        #                          label="Rows", orient=tk.HORIZONTAL, command=self.update_grid)
+        # self.rows_slider.set(self.main_window.settings["rows"])
+        # self.rows_slider.pack()
 
-        Label(settings_window, text="Number of Columns").pack()
-        self.cols_slider = Scale(settings_window, from_=self.main_window.min_grid_size, to=self.main_window.max_grid_size,
-                                 label="Columns", orient=tk.HORIZONTAL, command=self.update_grid)
-        self.cols_slider.set(self.main_window.settings["cols"])
-        self.cols_slider.pack()
+        # Label(settings_window, text="Number of Columns").pack()
+        # self.cols_slider = Scale(settings_window, from_=self.main_window.min_grid_size, to=self.main_window.max_grid_size,
+        #                          label="Columns", orient=tk.HORIZONTAL, command=self.update_grid)
+        # self.cols_slider.set(self.main_window.settings["cols"])
+        # self.cols_slider.pack()
 
         # Square size settings
         Label(settings_window, text="Square Size").pack()
