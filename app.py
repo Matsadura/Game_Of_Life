@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
-""" John Conway’s Game of Life """
-from src.main_window import MainWindow
-import sys
+""" John Conways Game of Life """
+import tkinter as tk
+from src.components.main_window import GameOfLifeMainWindow
 
-
-app = MainWindow()
-
-
-if __name__ == '__main__':
-    sys.setrecursionlimit(1500)
-    app.mainloop()
+if __name__ == "__main__":
+    game_gui = GameOfLifeMainWindow()
+    game_gui.run()
