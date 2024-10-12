@@ -24,7 +24,7 @@ class GameOfLifeMainWindow:
         self.min_square_size = 10
         self.max_square_size = 50
 
-        self.min_speed = 50
+        self.min_speed = 1
         self.max_speed = 1000
 
         self.custom_patterns = {}
