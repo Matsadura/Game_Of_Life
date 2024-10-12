@@ -1,24 +1,49 @@
-import tkinter as tk
+import customtkinter as ctk
 
 class GridCanvas:
     def __init__(self, main_window):
         self.main_window = main_window
-        self.canvas = tk.Canvas(self.main_window.root)
-        self.canvas.pack(expand=True)  # Allow canvas to expand and center in the window
-        self.canvas.bind("<Button-1>", self.main_window.cell_click)  # Bind the click event to cell_click
-        self.update_canvas_size()
+        
+        # Create a frame to hold the canvas, and use layout managers on the frame
+        self.frame = ctk.CTkFrame(self.main_window.root)
+        self.frame.grid(row=0, column=0, padx=10, pady=10)  # Adjust as needed
+
+        # Create the canvas inside the frame
+        self.canvas = ctk.CTkCanvas(self.frame, bg="grey")
+        self.canvas.pack(fill="both", expand=True)
+
+        # Bind left click for cell toggling
+        self.canvas.bind("<Button-1>", self.cell_click)
 
     def draw_grid(self):
-        self.canvas.delete("all")  # Clear the canvas before redrawing
+        # Clear the canvas before redrawing
+        self.canvas.delete("all")
+
+        # Iterate over the grid and draw each cell
         for row in range(self.main_window.settings["rows"]):
             for col in range(self.main_window.settings["cols"]):
-                x1 = col * self.main_window.settings["square_size"]
-                y1 = row * self.main_window.settings["square_size"]
-                x2 = x1 + self.main_window.settings["square_size"]
-                y2 = y1 + self.main_window.settings["square_size"]
-                color = "black" if self.main_window.game.grid[row][col] == 1 else "white"
-                self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="gray")
+                x0 = col * self.main_window.settings["square_size"]
+                y0 = row * self.main_window.settings["square_size"]
+                x1 = x0 + self.main_window.settings["square_size"]
+                y1 = y0 + self.main_window.settings["square_size"]
+                color = "lightgreen" if self.main_window.game.grid[row][col] else "white"
+                self.canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline="black")
+
+        # Update the canvas size based on new grid settings
+        self.update_canvas_size()
 
     def update_canvas_size(self):
-        self.canvas.config(width=self.main_window.settings["square_size"] * self.main_window.settings["cols"],
-                           height=self.main_window.settings["square_size"] * self.main_window.settings["rows"])
+        self.canvas.config(
+            width=self.main_window.settings["cols"] * self.main_window.settings["square_size"],
+            height=self.main_window.settings["rows"] * self.main_window.settings["square_size"]
+        )
+
+    def cell_click(self, event):
+        # Handle cell click events
+        square_size = self.main_window.settings["square_size"]
+        col = int(event.x // square_size)
+        row = int(event.y // square_size)
+
+        if 0 <= row < self.main_window.settings["rows"] and 0 <= col < self.main_window.settings["cols"]:
+            self.main_window.game.toggle_cell(row, col)
+            self.draw_grid()
