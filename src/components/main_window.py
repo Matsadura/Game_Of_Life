@@ -97,7 +97,42 @@ class GameOfLifeMainWindow:
         # # Initialize volume settings
         self.volume = 0.5  # Initial volume (0.0 to 1.0)
         self.is_muted = False
+        self.show_intro_window()
+        self.init_game()
 
+    def show_intro_window(self):
+        # Create the introductory window
+        intro_window = Toplevel(self.root)
+        intro_window.title("Welcome to the Game of Life")
+        intro_window.geometry("400x300")
+        intro_window.configure(bg="#F3F8F2")
+
+        # Message label
+        message_label = ctk.CTkLabel(intro_window, text="Welcome to the Game of Life!\n\nClick 'Play' to start the game.", bg_color="#3581B8")
+        message_label.pack(pady=20)
+
+        # Play button
+        play_button = StylishButton(intro_window, text="Play", command=intro_window.destroy)
+        play_button.pack(pady=10)
+
+        # Center the introductory window on the screen
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x = (screen_width / 2) - (400 / 2)
+        y = (screen_height / 2) - (300 / 2)
+        intro_window.geometry(f"+{int(x)}+{int(y)}")
+
+        # Ensure that the main window is disabled until the intro window is closed
+        # self.root.withdraw()  # Hide the main window
+        intro_window.protocol("WM_DELETE_WINDOW", self.on_intro_window_close)
+
+
+    def on_intro_window_close(self):
+        # Show the main window again if the intro window is closed
+        self.root.deiconify()  # Show the main window
+        pygame.mixer.music.unpause()  # Resume music if paused
+
+    def init_game(self):
         # Initialize game and components
         self.grid_canvas = GridCanvas(self)
         self.game = GameOfLife(self.grid_rows, self.grid_cols)
