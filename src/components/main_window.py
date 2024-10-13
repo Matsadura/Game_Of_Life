@@ -54,6 +54,8 @@ class StylishButton(ctk.CTkButton):
 
     def hex_to_rgb(self, hex_color):
         """Convert a hex color to RGB tuple."""
+        if type(hex_color) is not str:
+            return (255, 255, 255)
         hex_color = hex_color.lstrip('#')
         return tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
 
@@ -86,7 +88,43 @@ class GameOfLifeMainWindow:
         # # Initialize volume settings
         self.volume = 0.5  # Initial volume (0.0 to 1.0)
         self.is_muted = False
+        self.show_intro_window()
+        self.init_game()
 
+    def show_intro_window(self):
+        # Create the introductory window
+        intro_window = Toplevel(self.root)
+        intro_window.title("Welcome to the Game of Life")
+        intro_window.geometry("400x300")
+        intro_window.configure(bg="#F3F8F2")
+
+        # Message label
+        message_label = ctk.CTkLabel(intro_window, text="Welcome to the Game of Life!\n\nClick 'Play' to start the game.", bg_color="#3581B8")
+        message_label.pack(pady=20)
+
+        # Play button
+        play_button = StylishButton(intro_window, text="Play", command=intro_window.destroy)
+        play_button.pack(pady=10)
+
+        # Center the introductory window on the screen
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x = (screen_width / 2) - (400 / 2)
+        y = (screen_height / 2) - (300 / 2)
+        intro_window.geometry(f"+{int(x)}+{int(y)}")
+
+        # Ensure that the main window is disabled until the intro window is closed
+        # self.root.withdraw()  # Hide the main window
+        intro_window.protocol("WM_DELETE_WINDOW", self.on_intro_window_close)
+
+
+    def on_intro_window_close(self):
+        # Show the main window again if the intro window is closed
+        
+        self.root.deiconify()  # Show the main window
+        pygame.mixer.music.unpause()  # Resume music if paused
+
+    def init_game(self):
         # Initialize game and components
         self.grid_canvas = GridCanvas(self)
         self.grid_width = self.grid_canvas.canvas.winfo_width() - self.panel_size
@@ -105,14 +143,12 @@ class GameOfLifeMainWindow:
         pygame.mixer.music.load('relaxing_piano.mp3')  # Adjust according to your file structure
         pygame.mixer.music.play(-1)  # -1 to loop the music
 
+        # Create volume control button
+        self.sound_volume_label = ctk.StringVar(value=f"Volume {int(self.volume * 100)}%")
+
         # Set up UI elements
         self.create_widgets()
 
-        # Create volume control button
-        self.volume_button = StylishButton(self.control_frame, text="Mute", command=self.toggle_mute)
-        self.volume_button.pack(side=ctk.TOP, padx=10, pady=5)
-        self.sound_volume_label = ctk.StringVar()
-        self.sound_volume_label.set("Volume: 50%")
 
 
     def set_volume(self, value):
@@ -147,35 +183,46 @@ class GameOfLifeMainWindow:
         button_color = "#3CBBB1"
 
         # Control buttons
-        StylishButton(self.control_frame, text="Start", command=self.start_game, fg_color=button_color, hover_color="#FFFFFFF").pack(side=ctk.TOP, padx=10, pady=5)
-        StylishButton(self.control_frame, text="Stop", command=self.stop_game, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
-        StylishButton(self.control_frame, text="Reset", command=self.reset_game, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
-        StylishButton(self.control_frame, text="Reset to Initial", command=self.reset_to_initial, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
-        StylishButton(self.control_frame, text="Settings", command=self.open_settings, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
-        StylishButton(self.control_frame, text="Save Pattern", command=self.save_pattern, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
+        for button_text, command in [
+            ("Start", self.start_game),
+            ("Stop", self.stop_game),
+            ("Reset", self.reset_game),
+            ("Reset to Initial", self.reset_to_initial),
+            ("Settings", self.open_settings),
+            ("Save Pattern", self.save_pattern)
+        ]:
+            StylishButton(self.control_frame, text=button_text, command=command, fg_color=button_color, hover_color="#FFFFFF").pack(side=ctk.TOP, padx=10, pady=5)
 
         # Volume control button
-        self.volume_button = StylishButton(self.control_frame, text="Mute", command=self.toggle_mute, fg_color=button_color, hover_color="#329C94")
+        self.volume_button = StylishButton(self.control_frame, text="Mute", command=self.toggle_mute, fg_color=button_color, hover_color="#FFFFFF")
         self.volume_button.pack(side=ctk.TOP, padx=10, pady=5)
 
         # Volume slider
         self.volume_slider = ctk.CTkSlider(self.control_frame, from_=0, to=1, command=self.set_volume)
 
+
         #  = Scale(self.control_frame, from_=0, to=1, resolution=0.1, orient='horizontal', command=self.set_volume)
         self.volume_slider.set(self.volume)  # Set initial volume
         self.volume_slider.pack(side=ctk.TOP, padx=10, pady=5)
 
-        self.resolution_entry = ctk.CTkEntry(self.control_frame, width=100)
-        self.resolution_entry.insert(0, "0.1")
-
+        # Volume label
         self.volume_label = ctk.CTkLabel(self.control_frame, textvariable=self.sound_volume_label)
-        self.volume_label.pack()
+        self.volume_label.pack(side=ctk.TOP, padx=10, pady=5)
+
+        # Create a frame for the pattern selection dropdown to center it
+        self.dropdown_frame = ctk.CTkFrame(self.control_frame)  # New frame for the dropdown
+        self.dropdown_frame.pack(side=ctk.TOP, pady=10)  # Center vertically within the control frame
 
         # Pattern selection dropdown
-        self.pattern_var = StringVar()
+        self.pattern_var = StringVar(self.root)
         self.pattern_var.set("Select a Pattern")
-        self.pattern_dropdown = OptionMenu(self.control_frame, self.pattern_var, *self.patterns.keys(), command=self.load_pattern)
-        self.pattern_dropdown.pack(side=ctk.LEFT, padx=10, pady=5)
+        self.pattern_dropdown = OptionMenu(self.dropdown_frame, self.pattern_var, *self.patterns.keys(), command=self.load_pattern)
+        self.pattern_dropdown.pack(padx=10, pady=5)  # Adjust padding as necessary
+
+        # Optional: If you want to add a resolution entry below the dropdown
+        # self.resolution_entry = ctk.CTkEntry(self.dropdown_frame, width=100)
+        # self.resolution_entry.insert(0, "0.1")
+        # self.resolution_entry.pack(pady=5)  # Adjust padding as necessary
 
     def open_settings(self):
         self.settings_window.open()
