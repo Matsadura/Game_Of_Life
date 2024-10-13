@@ -7,6 +7,7 @@ from .game_controls import GameControls
 from .grid_canvas import GridCanvas
 from .settings_window import SettingsWindow
 from .patterns import Patterns
+import json
 
 pygame.mixer.init()
 
@@ -59,6 +60,8 @@ class StylishButton(ctk.CTkButton):
 
 class GameOfLifeMainWindow:
     sound_volume_label = None
+    PATTERNS_FILE = "patterns.json"
+    patterns = {}
     def __init__(self):
         ctk.set_appearance_mode("System")  # Set to "Dark" or "Light" mode as needed
         ctk.set_default_color_theme("blue")  # Set the default color theme
@@ -75,21 +78,10 @@ class GameOfLifeMainWindow:
             "simulation_speed": 500
         }
 
+        # load patterns
+        self.load_patterns()
+
         self.panel_size = self.width // 6
-
-        self.grid_width = self.width - self.panel_size
-        self.grid_height = self.height
-
-        self.grid_rows = self.grid_height // self.settings['square_size']
-        self.grid_cols = self.grid_width // self.settings['square_size']
-
-        # Custom patterns
-        self.custom_patterns = {}
-        self.patterns = {
-            "Blinker": Patterns.blinker_pattern(),
-            "Glider": Patterns.glider_pattern(),
-            "Glider gun": Patterns.glider_gun(),
-        }
 
         # # Initialize volume settings
         self.volume = 0.5  # Initial volume (0.0 to 1.0)
@@ -97,6 +89,10 @@ class GameOfLifeMainWindow:
 
         # Initialize game and components
         self.grid_canvas = GridCanvas(self)
+        self.grid_width = self.grid_canvas.canvas.winfo_width() - self.panel_size
+        self.grid_height = self.grid_canvas.canvas.winfo_height()
+        self.grid_rows = self.grid_height // self.settings['square_size']
+        self.grid_cols = self.grid_width // self.settings['square_size']
         self.game = GameOfLife(self.grid_rows, self.grid_cols)
 
         self.game_controls = GameControls(self)
@@ -163,7 +159,6 @@ class GameOfLifeMainWindow:
         self.volume_button.pack(side=ctk.TOP, padx=10, pady=5)
 
         # Volume slider
-
         self.volume_slider = ctk.CTkSlider(self.control_frame, from_=0, to=1, command=self.set_volume)
 
         #  = Scale(self.control_frame, from_=0, to=1, resolution=0.1, orient='horizontal', command=self.set_volume)
@@ -176,18 +171,11 @@ class GameOfLifeMainWindow:
         self.volume_label = ctk.CTkLabel(self.control_frame, textvariable=self.sound_volume_label)
         self.volume_label.pack()
 
-
         # Pattern selection dropdown
-        self.pattern_var = StringVar(self.root)
-        self.pattern_var.set("None")
+        self.pattern_var = StringVar()
+        self.pattern_var.set("Select a Pattern")
         self.pattern_dropdown = OptionMenu(self.control_frame, self.pattern_var, *self.patterns.keys(), command=self.load_pattern)
         self.pattern_dropdown.pack(side=ctk.LEFT, padx=10, pady=5)
-
-    def load_pattern(self, selected_pattern):
-        if selected_pattern in self.patterns:
-            self.game.reset()
-            self.game.load_pattern(self.patterns[selected_pattern], self.grid_rows // 2, self.grid_cols // 2)
-            self.grid_canvas.draw_grid()
 
     def open_settings(self):
         self.settings_window.open()
@@ -215,12 +203,6 @@ class GameOfLifeMainWindow:
     def reset_to_initial(self):
         self.grid_canvas.draw_grid()
 
-    # def run_game(self):
-    #     if hasattr(self, 'is_running') and self.is_running:  # Check if is_running is defined
-    #         self.game.update()
-    #         self.grid_canvas.draw_grid()
-    #         self.root.after(self.settings["simulation_speed"], self.run_game)
-
     def start_game(self):
         self.is_running = True
         self.run_game()
@@ -247,3 +229,16 @@ class GameOfLifeMainWindow:
             changed_cells = self.game.update_game_grid()
             self.grid_canvas.update_grid(changed_cells, self.game.grid)
             self.root.after(self.settings["simulation_speed"], self.run_game)
+    
+    def load_patterns(self):
+        with open(self.PATTERNS_FILE, "r") as file:
+            self.patterns = json.load(file)
+    
+    def save_patterns(self):
+        with open(self.PATTERNS_FILE, "w") as file:
+            json.dump(self.patterns, file, indent=4)
+        
+    def load_pattern(self, patt):
+        self.game.reset()
+        self.game.load_pattern(self.patterns[patt], self.grid_rows, self.grid_cols)
+        self.grid_canvas.draw_grid()
