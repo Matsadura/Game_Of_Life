@@ -152,37 +152,43 @@ class GameOfLifeMainWindow:
         button_color = "#3CBBB1"
 
         # Control buttons
-        StylishButton(self.control_frame, text="Start", command=self.start_game, fg_color=button_color, hover_color="#FFFFFFF").pack(side=ctk.TOP, padx=10, pady=5)
-        StylishButton(self.control_frame, text="Stop", command=self.stop_game, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
-        StylishButton(self.control_frame, text="Reset", command=self.reset_game, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
-        StylishButton(self.control_frame, text="Reset to Initial", command=self.reset_to_initial, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
-        StylishButton(self.control_frame, text="Settings", command=self.open_settings, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
-        StylishButton(self.control_frame, text="Save Pattern", command=self.save_pattern, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
+        for button_text, command in [
+            ("Start", self.start_game),
+            ("Stop", self.stop_game),
+            ("Reset", self.reset_game),
+            ("Reset to Initial", self.reset_to_initial),
+            ("Settings", self.open_settings),
+            ("Save Pattern", self.save_pattern)
+        ]:
+            StylishButton(self.control_frame, text=button_text, command=command, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
 
         # Volume control button
         self.volume_button = StylishButton(self.control_frame, text="Mute", command=self.toggle_mute, fg_color=button_color, hover_color="#329C94")
         self.volume_button.pack(side=ctk.TOP, padx=10, pady=5)
 
         # Volume slider
-
         self.volume_slider = ctk.CTkSlider(self.control_frame, from_=0, to=1, command=self.set_volume)
-
-        #  = Scale(self.control_frame, from_=0, to=1, resolution=0.1, orient='horizontal', command=self.set_volume)
         self.volume_slider.set(self.volume)  # Set initial volume
         self.volume_slider.pack(side=ctk.TOP, padx=10, pady=5)
 
-        self.resolution_entry = ctk.CTkEntry(self.control_frame, width=100)
-        self.resolution_entry.insert(0, "0.1")
-
+        # Volume label
         self.volume_label = ctk.CTkLabel(self.control_frame, textvariable=self.sound_volume_label)
-        self.volume_label.pack()
+        self.volume_label.pack(side=ctk.TOP, padx=10, pady=5)
 
+        # Create a frame for the pattern selection dropdown to center it
+        self.dropdown_frame = ctk.CTkFrame(self.control_frame)  # New frame for the dropdown
+        self.dropdown_frame.pack(side=ctk.TOP, pady=10)  # Center vertically within the control frame
 
         # Pattern selection dropdown
         self.pattern_var = StringVar(self.root)
-        self.pattern_var.set("None")
-        self.pattern_dropdown = OptionMenu(self.control_frame, self.pattern_var, *self.patterns.keys(), command=self.load_pattern)
-        self.pattern_dropdown.pack(side=ctk.LEFT, padx=10, pady=5)
+        self.pattern_var.set("Select a Pattern")
+        self.pattern_dropdown = OptionMenu(self.dropdown_frame, self.pattern_var, *self.patterns.keys(), command=self.load_pattern)
+        self.pattern_dropdown.pack(padx=10, pady=5)  # Adjust padding as necessary
+
+        # Optional: If you want to add a resolution entry below the dropdown
+        self.resolution_entry = ctk.CTkEntry(self.dropdown_frame, width=100)
+        self.resolution_entry.insert(0, "0.1")
+        self.resolution_entry.pack(pady=5)  # Adjust padding as necessary
 
     def load_pattern(self, selected_pattern):
         if selected_pattern in self.patterns:
