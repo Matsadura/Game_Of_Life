@@ -34,7 +34,7 @@ class GameOfLifeMainWindow:
         self.min_square_size = 10
         self.max_square_size = 50
 
-        self.min_speed = 10
+        self.min_speed = 1
         self.max_speed = 1000
 
         self.custom_patterns = {}
@@ -55,9 +55,9 @@ class GameOfLifeMainWindow:
 
         # Set up UI elements
         self.create_widgets()
-        self.root.update_idletasks()
-        self.on_resize(event=None)
-        self.root.bind("<Configure>", self.on_resize)
+        # self.root.update_idletasks()
+        # self.on_resize(event=None)
+        # self.root.bind("<Configure>", self.on_resize)
         # Run the main loop
         # self.root.mainloop()
     
@@ -139,11 +139,11 @@ class GameOfLifeMainWindow:
     def reset_to_initial(self):
         self.grid_canvas.draw_grid()
 
-    def run_game(self):
-        if hasattr(self, 'is_running') and self.is_running:  # Check if is_running is defined
-            self.game.update()
-            self.grid_canvas.draw_grid()
-            self.root.after(self.settings["simulation_speed"], self.run_game)
+    # def run_game(self):
+    #     if hasattr(self, 'is_running') and self.is_running:  # Check if is_running is defined
+    #         self.game.update()
+    #         self.grid_canvas.draw_grid()
+    #         self.root.after(self.settings["simulation_speed"], self.run_game)
 
     def start_game(self):
         self.is_running = True
@@ -165,3 +165,9 @@ class GameOfLifeMainWindow:
 
     def run(self):
         self.root.mainloop()  # Ensure this method exists to run the main loop
+
+    def run_game(self):
+        if hasattr(self, 'is_running') and self.is_running:  # Check if is_running is defined
+            changed_cells = self.game.update_game_grid()
+            self.grid_canvas.update_grid(changed_cells, self.game.grid)
+            self.root.after(self.settings["simulation_speed"], self.run_game)
