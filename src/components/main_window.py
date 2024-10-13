@@ -53,12 +53,14 @@ class StylishButton(ctk.CTkButton):
 
     def hex_to_rgb(self, hex_color):
         """Convert a hex color to RGB tuple."""
+        if type(hex_color) is not str:
+            return (255, 255, 255)
         hex_color = hex_color.lstrip('#')
         return tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
 
 
 class GameOfLifeMainWindow:
-    sound_volume_label = None
+    
     def __init__(self):
         ctk.set_appearance_mode("System")  # Set to "Dark" or "Light" mode as needed
         ctk.set_default_color_theme("blue")  # Set the default color theme
@@ -110,14 +112,14 @@ class GameOfLifeMainWindow:
         pygame.mixer.music.load('relaxing_piano.mp3')  # Adjust according to your file structure
         pygame.mixer.music.play(-1)  # -1 to loop the music
 
+        # Create volume control button
+        self.sound_volume_label = ctk.StringVar(value=f"Volume {int(self.volume * 100)}%")
+
         # Set up UI elements
         self.create_widgets()
-
-        # Create volume control button
         self.volume_button = StylishButton(self.control_frame, text="Mute", command=self.toggle_mute)
         self.volume_button.pack(side=ctk.TOP, padx=10, pady=5)
-        self.sound_volume_label = ctk.StringVar()
-        self.sound_volume_label.set("Volume: 50%")
+
 
 
     def set_volume(self, value):
@@ -152,13 +154,13 @@ class GameOfLifeMainWindow:
         button_color = "#3CBBB1"
 
         # Control buttons
-        StylishButton(self.control_frame, text="Start", command=self.start_game, fg_color=button_color, hover_color="#FFFFFFF").pack(side=ctk.TOP, padx=10, pady=5)
+        StylishButton(self.control_frame, text="Start", command=self.start_game, fg_color=button_color, hover_color="#FFFFFF").pack(side=ctk.TOP, padx=10, pady=5)
         StylishButton(self.control_frame, text="Stop", command=self.stop_game, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
         StylishButton(self.control_frame, text="Reset", command=self.reset_game, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
         StylishButton(self.control_frame, text="Reset to Initial", command=self.reset_to_initial, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
         StylishButton(self.control_frame, text="Settings", command=self.open_settings, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
         StylishButton(self.control_frame, text="Save Pattern", command=self.save_pattern, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
-
+        
         # Volume control button
         self.volume_button = StylishButton(self.control_frame, text="Mute", command=self.toggle_mute, fg_color=button_color, hover_color="#329C94")
         self.volume_button.pack(side=ctk.TOP, padx=10, pady=5)
@@ -166,7 +168,6 @@ class GameOfLifeMainWindow:
         # Volume slider
 
         self.volume_slider = ctk.CTkSlider(self.control_frame, from_=0, to=1, command=self.set_volume)
-
         #  = Scale(self.control_frame, from_=0, to=1, resolution=0.1, orient='horizontal', command=self.set_volume)
         self.volume_slider.set(self.volume)  # Set initial volume
         self.volume_slider.pack(side=ctk.TOP, padx=10, pady=5)
