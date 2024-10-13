@@ -1,13 +1,14 @@
 import customtkinter as ctk
 import tkinter as tk
 import pygame
-from tkinter import Toplevel, Scale, Label, StringVar, OptionMenu, simpledialog
+from tkinter import Toplevel, Scale, Label, StringVar, OptionMenu, simpledialog, messagebox
 from .game_of_life import GameOfLife
 from .game_controls import GameControls
 from .grid_canvas import GridCanvas
 from .settings_window import SettingsWindow
 from .patterns import Patterns
 import json
+import os
 
 pygame.mixer.init()
 
@@ -62,7 +63,7 @@ class StylishButton(ctk.CTkButton):
 
 class GameOfLifeMainWindow:
     sound_volume_label = None
-    PATTERNS_FILE = "patterns.json"
+    PATTERNS_FILE = "data/patterns.json"
     patterns = {}
     def __init__(self):
         ctk.set_appearance_mode("System")  # Set to "Dark" or "Light" mode as needed
@@ -81,6 +82,7 @@ class GameOfLifeMainWindow:
         }
 
         # load patterns
+        self.patterns = Patterns.get_patterns()
         self.load_patterns()
 
         self.panel_size = self.width // 6
@@ -120,7 +122,6 @@ class GameOfLifeMainWindow:
 
     def on_intro_window_close(self):
         # Show the main window again if the intro window is closed
-        
         self.root.deiconify()  # Show the main window
         pygame.mixer.music.unpause()  # Resume music if paused
 
@@ -228,11 +229,27 @@ class GameOfLifeMainWindow:
         self.settings_window.open()
 
     def save_pattern(self):
+        """ Save the current pattern to the patterns dictionary."""
         pattern_name = simpledialog.askstring("Save Pattern", "Enter a name for your pattern:")
         if pattern_name:
-            self.custom_patterns[pattern_name] = [row[:] for row in self.game.grid]  # Copy current grid state
-            self.patterns[pattern_name] = self.custom_patterns[pattern_name]  # Add to patterns
-            self.pattern_dropdown['menu'].add_command(label=pattern_name, command=lambda value=pattern_name: self.load_pattern(value))
+            # Check if the pattern name already exists
+            if pattern_name in self.patterns:
+                # Show an error message
+                messagebox.showerror("Error", f"Pattern '{pattern_name}' already exists. Please choose a different name.")
+            else:
+                matrix_range = self.game.get_matrix_range(self.grid_rows, self.grid_cols)
+
+                if matrix_range is None:
+                    messagebox.showerror("Error", f"Please give a valid pattern\nThe grid is empty")
+                    return
+
+                self.patterns[pattern_name] = [
+                    row[matrix_range["left"]:matrix_range["right"] + 1]
+                    for row in
+                    self.game.grid[matrix_range["top"]:matrix_range["bottom"] + 1]
+                    ]
+                self.save_patterns()
+                self.pattern_dropdown['menu'].add_command(label=pattern_name, command=lambda value=pattern_name: self.load_pattern(value))
 
     def update_grid(self):
         self.grid_rows = self.settings_window.rows_slider.get()
@@ -277,13 +294,27 @@ class GameOfLifeMainWindow:
             self.grid_canvas.update_grid(changed_cells, self.game.grid)
             self.root.after(self.settings["simulation_speed"], self.run_game)
     
+    def validate_data_direcory(self):
+        if not os.path.exists("data"):
+            os.makedirs("data")
+
     def load_patterns(self):
+        if not os.path.exists(self.PATTERNS_FILE):
+            return
         with open(self.PATTERNS_FILE, "r") as file:
-            self.patterns = json.load(file)
+            self.patterns.update(json.load(file))
     
     def save_patterns(self):
+        new_patterns = self.patterns.copy()
+        for pattern in Patterns.patterns_names():
+            new_patterns.pop(pattern, None)
+        
+        if len(new_patterns) == 0:
+            return
+
+        self.validate_data_direcory()
         with open(self.PATTERNS_FILE, "w") as file:
-            json.dump(self.patterns, file, indent=4)
+            json.dump(new_patterns, file)
         
     def load_pattern(self, patt):
         self.game.reset()

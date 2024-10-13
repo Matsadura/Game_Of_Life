@@ -8,3 +8,6 @@ env/
 
 # OS-specific files
 .DS_Store
+
+# ignore the backup file for patterns
+all_patterns.json

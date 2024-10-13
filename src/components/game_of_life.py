@@ -65,3 +65,35 @@ class GameOfLife:
             for col_n, cell in enumerate(row):
                 if cell == 1:
                     self.grid[row_start + row_n][col_start + col_n] = 1
+
+    def get_matrix_range(self, rows, cols):
+        matrix_range = {"top": -1, "bottom": -1, "left": -1, "right": -1}
+
+        for r in range(rows):
+            if 1 in self.grid[r]:
+                matrix_range["top"] = r
+                break
+
+        for r in range(rows - 1, -1, -1):
+            if 1 in self.grid[r]:
+                matrix_range["bottom"] = r
+                break
+
+        if  matrix_range["top"] == -1 or matrix_range["bottom"] == -1:
+            return None
+
+        matrix_range["left"] = self.grid[matrix_range["top"]].index(1)
+        for r in range(matrix_range["top"] + 1, matrix_range["bottom"] + 1):
+            try:
+                index = self.grid[r].index(1)
+                if index < matrix_range["left"]:
+                    matrix_range["left"] = index
+            except ValueError:
+                continue
+        
+        for r in range(matrix_range["top"], matrix_range["bottom"] + 1):
+            for c in range(cols - 1, matrix_range["left"] - 1, -1):
+                if self.grid[r][c] == 1 and c > matrix_range["right"]:
+                    matrix_range["right"] = c
+                    break
+        return matrix_range
