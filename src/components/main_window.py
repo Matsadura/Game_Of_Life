@@ -11,7 +11,6 @@ class GameOfLifeMainWindow:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Game of Life")
-        
         self.width = self.root.winfo_screenwidth()
         self.height = self.root.winfo_screenheight()
         self.root.geometry(f'{self.width}x{self.height}')
