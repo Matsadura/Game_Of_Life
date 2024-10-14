@@ -29,18 +29,46 @@ class GameOfLife:
         self.r_range = (0, self.rows)
         self.c_range = (0, self.cols)
 
-    def update_game_grid(self):
-        # new_grid = self.create_grid()
+    def update_game_grid(self, canvas):
         # TODO: add a start and end points in grid update
+        range_d = self.get_matrix_range(self.rows, self.cols)
         new = []
-        for r in range(self.rows):
-            for c in range(self.cols):
+        rs = range_d["top"]
+        re = range_d["bottom"]
+        cs = range_d["left"]
+        ce = range_d["right"]
+        if rs > 0:
+            rs -= 1
+        if re < self.rows - 1:
+            re += 1
+        if cs > 0:
+            cs -= 1
+        if ce < self.cols - 1:
+            ce += 1
+        for r in range(rs, re + 1):
+            for c in range(cs, ce + 1):
                 alive_neighbors = self.count_alive_neighbors(r, c)
-                if self.grid[r][c] == 1 and alive_neighbors not in (2, 3):  # Cell is alive and has too few or too many neighbors
-                    new.append((r, c, 0))
+                if self.grid[r][c] == 1:  # Cell is alive and has too few or too many neighbors
+                    if alive_neighbors not in (2, 3):
+                        new.append((r, c, 0))
+                    else:
+                        canvas.canvas.itemconfig(canvas.cells[r][c], fill="#ff00e8")
                 elif self.grid[r][c] == 0 and alive_neighbors == 3:  # Cell is dead and has exactly 3 neighbors
                     new.append((r, c, 1))
         return new
+
+    # def update_game_grid(self):
+    #     # new_grid = self.create_grid()
+    #     # TODO: add a start and end points in grid update
+    #     new = []
+    #     for r in range(self.rows):
+    #         for c in range(self.cols):
+    #             alive_neighbors = self.count_alive_neighbors(r, c)
+    #             if self.grid[r][c] == 1 and alive_neighbors not in (2, 3):  # Cell is alive and has too few or too many neighbors
+    #                 new.append((r, c, 0))
+    #             elif self.grid[r][c] == 0 and alive_neighbors == 3:  # Cell is dead and has exactly 3 neighbors
+    #                 new.append((r, c, 1))
+    #     return new
 
     def count_alive_neighbors(self, row, col):
         directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
@@ -67,33 +95,33 @@ class GameOfLife:
                     self.grid[row_start + row_n][col_start + col_n] = 1
 
     def get_matrix_range(self, rows, cols):
-        matrix_range = {"top": -1, "bottom": -1, "left": -1, "right": -1}
+        self.matrix_range = {"top": -1, "bottom": -1, "left": -1, "right": -1}
 
         for r in range(rows):
             if 1 in self.grid[r]:
-                matrix_range["top"] = r
+                self.matrix_range["top"] = r
                 break
 
         for r in range(rows - 1, -1, -1):
             if 1 in self.grid[r]:
-                matrix_range["bottom"] = r
+                self.matrix_range["bottom"] = r
                 break
 
-        if  matrix_range["top"] == -1 or matrix_range["bottom"] == -1:
+        if  self.matrix_range["top"] == -1 or self.matrix_range["bottom"] == -1:
             return None
 
-        matrix_range["left"] = self.grid[matrix_range["top"]].index(1)
-        for r in range(matrix_range["top"] + 1, matrix_range["bottom"] + 1):
+        self.matrix_range["left"] = self.grid[self.matrix_range["top"]].index(1)
+        for r in range(self.matrix_range["top"] + 1, self.matrix_range["bottom"] + 1):
             try:
                 index = self.grid[r].index(1)
-                if index < matrix_range["left"]:
-                    matrix_range["left"] = index
+                if index < self.matrix_range["left"]:
+                    self.matrix_range["left"] = index
             except ValueError:
                 continue
         
-        for r in range(matrix_range["top"], matrix_range["bottom"] + 1):
-            for c in range(cols - 1, matrix_range["left"] - 1, -1):
-                if self.grid[r][c] == 1 and c > matrix_range["right"]:
-                    matrix_range["right"] = c
+        for r in range(self.matrix_range["top"], self.matrix_range["bottom"] + 1):
+            for c in range(cols - 1, self.matrix_range["left"] - 1, -1):
+                if self.grid[r][c] == 1 and c > self.matrix_range["right"]:
+                    self.matrix_range["right"] = c
                     break
-        return matrix_range
+        return self.matrix_range
