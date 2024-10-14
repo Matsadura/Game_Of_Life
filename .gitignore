@@ -10,3 +10,7 @@ __pycache__/
 
 # ignore the backup file for patterns
 data
+
+app.dist
+app.build
+app.onefile-build
