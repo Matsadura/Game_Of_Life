@@ -236,7 +236,6 @@ class GameOfLifeMainWindow:
             ("Stop", self.stop_game),
             ("Reset", self.reset_game),
             ("Reset to Initial", self.reset_to_initial),
-            ("Settings", self.open_settings),
             ("Save Pattern", self.save_pattern),
             ("Zoom In", self.zoom_in),
             ("Zoom Out", self.zoom_out),
@@ -368,21 +367,21 @@ class GameOfLifeMainWindow:
         self.update_grid()  # Update the grid size and redraw
         self.apply_grid_state(saved_state)  # Restore the saved state
     
-    # def update_grid(self):
-    #     self.grid_width = self.width - self.panel_size
-    #     self.grid_height = self.height
+    def update_grid(self):
+        self.grid_width = self.width - self.panel_size
+        self.grid_height = self.height
 
-    #     # Update the number of rows and columns based on the new square size
-    #     self.grid_rows = self.grid_height // self.settings['square_size']
-    #     self.grid_cols = self.grid_width // self.settings['square_size']
+        # Update the number of rows and columns based on the new square size
+        self.grid_rows = self.grid_height // self.settings['square_size']
+        self.grid_cols = self.grid_width // self.settings['square_size']
 
-    #     # Update the canvas size to reflect the new grid dimensions
-    #     self.grid_canvas.update_canvas_size(self.grid_width, self.grid_height)
+        # Update the canvas size to reflect the new grid dimensions
+        self.grid_canvas.update_canvas_size(self.grid_width, self.grid_height)
 
-    #     # Reinitialize the game grid with the new dimensions
-    #     self.game = GameOfLife(self.grid_rows, self.grid_cols)
+        # Reinitialize the game grid with the new dimensions
+        self.game = GameOfLife(self.grid_rows, self.grid_cols)
         
-    #     self.grid_canvas.draw_grid()  # Redraw the grid
+        self.grid_canvas.draw_grid()  # Redraw the grid
 
 
     # def start_drag(self, event):
