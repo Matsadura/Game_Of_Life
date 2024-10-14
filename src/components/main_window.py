@@ -120,7 +120,7 @@ class GameOfLifeMainWindow:
         self.grid_rows = self.grid_height // self.settings['square_size']
         self.grid_cols = self.grid_width // self.settings['square_size']
         self.game = GameOfLife(self.grid_rows, self.grid_cols)
-
+        self.game.load_pattern(self.patterns["glider_gun"], self.grid_rows, self.grid_cols)
         self.grid_canvas.draw_grid()  # Draw the initial grid
 
         # Load and play background music
@@ -130,7 +130,8 @@ class GameOfLifeMainWindow:
 
         # Create volume control button
         self.sound_volume_label = ctk.StringVar(value=f"Volume {int(self.volume * 100)}%")
-        self.speed_label_state = ctk.StringVar(value=f"Speed {501 - self.settings["simulation_speed"]}")
+        val = 501 - self.settings["simulation_speed"]
+        self.speed_label_state = ctk.StringVar(value=f"Speed {val}")
 
         # Set up UI elements
         self.create_widgets()
@@ -201,7 +202,8 @@ class GameOfLifeMainWindow:
             ("Stop", self.stop_game),
             ("Reset", self.reset_game),
             ("Clear", self.clear),
-            ("Save Pattern", self.save_pattern)
+            ("Save Pattern", self.save_pattern),
+            ("Next Generation", self.next_gen)
         ]:
             StylishButton(
                 self.control_frame,
@@ -279,6 +281,21 @@ class GameOfLifeMainWindow:
         # self.resolution_entry = ctk.CTkEntry(self.dropdown_frame, width=100)
         # self.resolution_entry.insert(0, "0.1")
         # self.resolution_entry.pack(pady=5)  # Adjust padding as necessary
+
+        self.help_button = ctk.CTkButton(self.control_frame, text="?",
+                                         width=50, height=50,
+                                         corner_radius=25,
+                                         fg_color="#007bff",
+                                         hover_color="#0056b3",
+                                         command=self.show_rules)
+        self.help_button.pack(side=tk.BOTTOM, anchor=tk.SE, padx=10, pady=10)
+
+    def next_gen(self):
+        """Go to teh next generation"""
+        changed_cells = self.game.update_game_grid(self.grid_canvas)
+        if not changed_cells:
+            return
+        self.grid_canvas.update_grid(changed_cells, self.game.grid)
 
     def save_pattern(self):
         """Prompt the user to enter a name for the current pattern and save it.
@@ -419,3 +436,27 @@ class GameOfLifeMainWindow:
         self.game.reset()
         self.game.load_pattern(self.patterns[patt], self.grid_rows, self.grid_cols)
         self.grid_canvas.draw_grid()
+
+    def show_rules(self):
+        """The rules of Conway's Game of Life"""
+        rules_window = ctk.CTkToplevel(self.root)
+        rules_window.title("Conway's Game of Life Rules")
+        rules_window.geometry("600x500")
+        title = "Conway's Game of Life Rules:"
+
+        rules_text = """1. Any live cell with fewer than two live neighbours dies, as if by underpopulation.
+
+2. Any live cell with two or three live neighbours lives on to the next generation.
+
+3. Any live cell with more than three live neighbours dies, as if by overpopulation.
+
+4. Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction."""
+
+        rules_label = ctk.CTkLabel(rules_window, text=title, wraplength=550, justify=tk.CENTER, font=('System', 20))
+        rules_label.pack(pady=20, padx=5)
+
+        rules_label = ctk.CTkLabel(rules_window, text=rules_text, justify=tk.CENTER, font=('System', 20))
+        rules_label.pack(pady=20, padx=5)
+
+        close_button = ctk.CTkButton(rules_window, text="Close", command=rules_window.destroy)
+        close_button.pack(side=tk.BOTTOM, pady=10)
