@@ -316,7 +316,30 @@ class GameOfLifeMainWindow:
                     ]
                 self.save_patterns()
                 self.pattern_dropdown['menu'].add_command(label=pattern_name, command=lambda value=pattern_name: self.load_pattern(value))
+    def zoom_in(self):
+        """Zoom in by increasing the square size and redrawing the grid."""
+        if self.settings["square_size"] < 50:  # Set a maximum square size
+            saved_state = self.get_current_grid_state()  # Save the current grid state
+            self.settings["square_size"] += 5  # Increment square size
+            self.update_grid()  # Update the grid size and redraw
+            self.apply_grid_state(saved_state)  # Restore the saved state
 
+    def zoom_out(self):
+        """Zoom out by decreasing the square size and redrawing the grid."""
+        if self.settings["square_size"] > 5:  # Set a minimum square size
+            saved_state = self.get_current_grid_state()  # Save the current grid state
+            self.settings["square_size"] -= 5  # Decrease square size
+            self.update_grid()  # Update the grid size and redraw
+            self.apply_grid_state(saved_state)  # Restore the saved state
+
+    
+    def reset_zoom(self):
+        """Reset the zoom level to the default square size."""
+        saved_state = self.get_current_grid_state()  # Save the current grid state
+        self.settings["square_size"] = self.default_square_size  # Reset square size to default
+        self.update_grid()  # Update the grid size and redraw
+        self.apply_grid_state(saved_state)  # Restore the saved state
+    
     def update_grid(self):
         self.grid_rows = self.settings_window.rows_slider.get()
         self.grid_cols = self.settings_window.cols_slider.get()
