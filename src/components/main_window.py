@@ -19,6 +19,7 @@ class GameOfLifeMainWindow:
     PATTERNS_FILE = "data/patterns.json"
     patterns = {}
     changed_cells = []
+    is_running = False
     def __init__(self):
         """Initialize the main window and set default parameters.
 
@@ -391,6 +392,7 @@ class GameOfLifeMainWindow:
         Clears the grid and sets it to the initial configuration of the current pattern.
         """
         self.game.reset()
+        self.game.load_pattern(self.current_pattern, self.grid_rows, self.grid_cols)
         self.grid_canvas.draw_grid()
 
     def clear(self):
@@ -402,7 +404,10 @@ class GameOfLifeMainWindow:
         self.grid_canvas.draw_grid()
 
     def start_game(self):
+        if self.is_running:
+            return
         self.is_running = True
+        self.current_pattern = [row[:] for row in self.game.grid[:]]
         self.run_game()
 
     def stop_game(self):
@@ -443,7 +448,8 @@ class GameOfLifeMainWindow:
         """
         if hasattr(self, 'is_running') and self.is_running:  # Check if is_running is defined
             changed_cells = self.game.update_game_grid(self.grid_canvas)
-            self.grid_canvas.update_grid(changed_cells, self.game.grid)
+            if changed_cells:
+                self.grid_canvas.update_grid(changed_cells, self.game.grid)
             self.root.after(self.settings["simulation_speed"], self.run_game)
     
     def validate_data_direcory(self):
