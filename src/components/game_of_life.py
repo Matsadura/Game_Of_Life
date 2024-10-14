@@ -32,6 +32,8 @@ class GameOfLife:
     def update_game_grid(self, canvas):
         # TODO: add a start and end points in grid update
         range_d = self.get_matrix_range(self.rows, self.cols)
+        if not range_d:
+            return None
         new = []
         rs = range_d["top"]
         re = range_d["bottom"]
@@ -83,6 +85,8 @@ class GameOfLife:
         self.grid = self.create_grid()
 
     def load_pattern(self, pattern, rows, cols):
+        if not pattern:
+            return
         patt_rows = len(pattern)
         patt_cols = len(pattern[0])
 

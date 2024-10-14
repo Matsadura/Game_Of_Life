@@ -69,6 +69,8 @@ class GameOfLifeMainWindow:
     PATTERNS_FILE = "data/patterns.json"
     patterns = {}
     changed_cells = []
+    current_pattern = None
+    is_running = False
     def __init__(self):
         ctk.set_appearance_mode("System")  # Set to "Dark" or "Light" mode as needed
         ctk.set_default_color_theme("blue")  # Set the default color theme
@@ -256,7 +258,7 @@ class GameOfLifeMainWindow:
         )
 
 
-        #  = Scale(self.control_frame, from_=0, to=1, resolution=0.1, orient='horizontal', command=self.set_volume)
+        # Scale(self.control_frame, from_=0, to=1, resolution=0.1, orient='horizontal', command=self.set_volume)
         self.volume_slider.set(self.volume)  # Set initial volume
         self.volume_slider.pack(side=ctk.TOP, padx=10, pady=(30, 0))
 
@@ -343,13 +345,18 @@ class GameOfLifeMainWindow:
 
     def reset_game(self):
         self.game.reset()
+        self.game.load_pattern(self.current_pattern, self.grid_rows, self.grid_cols)
         self.grid_canvas.draw_grid()
 
-    def reset_to_initial(self):
+    def clear(self):
+        self.game.reset()
         self.grid_canvas.draw_grid()
 
     def start_game(self):
+        if self.is_running:
+            return
         self.is_running = True
+        self.current_pattern = [row[:] for row in self.game.grid[:]]
         self.run_game()
 
     def stop_game(self):
@@ -374,7 +381,8 @@ class GameOfLifeMainWindow:
     def run_game(self):
         if hasattr(self, 'is_running') and self.is_running:  # Check if is_running is defined
             changed_cells = self.game.update_game_grid(self.grid_canvas)
-            self.grid_canvas.update_grid(changed_cells, self.game.grid)
+            if changed_cells:
+                self.grid_canvas.update_grid(changed_cells, self.game.grid)
             self.root.after(self.settings["simulation_speed"], self.run_game)
     
     def validate_data_direcory(self):
