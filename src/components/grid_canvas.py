@@ -8,7 +8,6 @@ class GridCanvas:
         self.canvas.pack(side="left",fill="both", expand=True)  # Allow canvas to expand and center in the window
         self.canvas.bind("<Button-1>", self.main_window.cell_click)  # Bind the click event to cell_click
         self.canvas.update()
-        
         # self.update_canvas_size(new_width=main_window.grid_width, new_height=main_window.grid_height)
 
     def draw_grid(self):

@@ -102,6 +102,12 @@ class GameOfLifeMainWindow:
 
         self.panel_size = self.width // 6
 
+        self.grid_width = self.width - self.panel_size
+        self.grid_height = self.height
+
+        self.grid_rows = self.grid_height // self.settings['square_size']
+        self.grid_cols = self.grid_width // self.settings['square_size']
+        
         # # Initialize volume settings
         self.volume = 0.2  # Initial volume (0.0 to 1.0)
         self.is_muted = False
