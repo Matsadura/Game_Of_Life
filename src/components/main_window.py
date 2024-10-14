@@ -295,15 +295,17 @@ class GameOfLifeMainWindow:
 
         # Toggle the state of the clicked cell
         if 0 <= row < self.grid_rows and 0 <= col < self.grid_cols:
-            self.game.toggle_cell(row, col)
-            self.grid_canvas.draw_grid()  # Redraw the grid after toggling
+            current_cell = self.game.grid[row][col]
+            color = "#ff00e2" if current_cell == 0 else "#191541"
+            self.game.grid[row][col] = 1 if current_cell == 0 else 0
+            self.grid_canvas.canvas.itemconfig(self.grid_canvas.cells[row][col], fill=color)
 
     def run(self):
         self.root.mainloop()  # Ensure this method exists to run the main loop
 
     def run_game(self):
         if hasattr(self, 'is_running') and self.is_running:  # Check if is_running is defined
-            changed_cells = self.game.update_game_grid()
+            changed_cells = self.game.update_game_grid(self.grid_canvas)
             self.grid_canvas.update_grid(changed_cells, self.game.grid)
             self.root.after(self.settings["simulation_speed"], self.run_game)
     

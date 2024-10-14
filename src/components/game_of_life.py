@@ -29,7 +29,7 @@ class GameOfLife:
         self.r_range = (0, self.rows)
         self.c_range = (0, self.cols)
 
-    def update_game_grid(self):
+    def update_game_grid(self, canvas):
         # TODO: add a start and end points in grid update
         range_d = self.get_matrix_range(self.rows, self.cols)
         new = []
@@ -47,10 +47,12 @@ class GameOfLife:
             ce += 1
         for r in range(rs, re + 1):
             for c in range(cs, ce + 1):
-                # print(self.rows, self.cols, r, c)
                 alive_neighbors = self.count_alive_neighbors(r, c)
-                if self.grid[r][c] == 1 and alive_neighbors not in (2, 3):  # Cell is alive and has too few or too many neighbors
-                    new.append((r, c, 0))
+                if self.grid[r][c] == 1:  # Cell is alive and has too few or too many neighbors
+                    if alive_neighbors not in (2, 3):
+                        new.append((r, c, 0))
+                    else:
+                        canvas.canvas.itemconfig(canvas.cells[r][c], fill="#ff00e8")
                 elif self.grid[r][c] == 0 and alive_neighbors == 3:  # Cell is dead and has exactly 3 neighbors
                     new.append((r, c, 1))
         return new
