@@ -5,7 +5,6 @@ from tkinter import Toplevel, Scale, Label, StringVar, OptionMenu, simpledialog,
 from .game_of_life import GameOfLife
 from .game_controls import GameControls
 from .grid_canvas import GridCanvas
-from .settings_window import SettingsWindow
 from .patterns import Patterns
 import json
 import os
@@ -90,15 +89,27 @@ class GameOfLifeMainWindow:
             "square_size": 20,
             "simulation_speed": 1
         }
-
+        self.default_square_size = self.settings["square_size"]  # Store default zoom level
+        self.is_dragging = False
+        self.drag_start_x = 0
+        self.drag_start_y = 0
+        self.grid_offset_x = 0  # X-offset for panning the grid
+        self.grid_offset_y = 0  # Y-offset for panning the grid
+        
         # load patterns
         self.patterns = Patterns.get_patterns()
         self.load_patterns()
 
         self.panel_size = self.width // 6
 
+        self.grid_width = self.width - self.panel_size
+        self.grid_height = self.height
+
+        self.grid_rows = self.grid_height // self.settings['square_size']
+        self.grid_cols = self.grid_width // self.settings['square_size']
+        
         # # Initialize volume settings
-        self.volume = 0.5  # Initial volume (0.0 to 1.0)
+        self.volume = 0.2  # Initial volume (0.0 to 1.0)
         self.is_muted = False
         self.show_intro_window()
 
@@ -146,6 +157,9 @@ class GameOfLifeMainWindow:
     def init_game(self):
         # Initialize game and components
         self.grid_canvas = GridCanvas(self)
+        # self.grid_canvas.canvas.bind("<ButtonPress-1>", self.start_drag)  # Bind left mouse button press
+        # self.grid_canvas.canvas.bind("<B1-Motion>", self.do_drag)        # Bind mouse movement (while button 1 is held)
+        # self.grid_canvas.canvas.bind("<ButtonRelease-1>", self.end_drag)  # Bind left mouse button release
         self.grid_width = self.grid_canvas.canvas.winfo_width() - self.panel_size
         self.grid_height = self.grid_canvas.canvas.winfo_height()
         self.grid_rows = self.grid_height // self.settings['square_size']
@@ -153,7 +167,6 @@ class GameOfLifeMainWindow:
         self.game = GameOfLife(self.grid_rows, self.grid_cols)
 
         self.game_controls = GameControls(self)
-        self.settings_window = SettingsWindow(self)
 
         self.grid_canvas.draw_grid()  # Draw the initial grid
 
@@ -223,8 +236,10 @@ class GameOfLifeMainWindow:
             ("Stop", self.stop_game),
             ("Reset", self.reset_game),
             ("Reset to Initial", self.reset_to_initial),
-            ("Settings", self.open_settings),
-            ("Save Pattern", self.save_pattern)
+            ("Save Pattern", self.save_pattern),
+            ("Zoom In", self.zoom_in),
+            ("Zoom Out", self.zoom_out),
+            ("Reset Zoom", self.reset_zoom),
         ]:
             StylishButton(
                 self.control_frame,
@@ -316,15 +331,86 @@ class GameOfLifeMainWindow:
                     ]
                 self.save_patterns()
                 self.pattern_dropdown['menu'].add_command(label=pattern_name, command=lambda value=pattern_name: self.load_pattern(value))
+    
+    def get_current_grid_state(self):
+        """Retrieve the current state of the grid (alive/dead cells)."""
+        return [[self.game.grid[row][col] for col in range(self.grid_cols)] for row in range(self.grid_rows)]
 
+    def apply_grid_state(self, saved_state):
+        """Apply the previously saved grid state back to the game grid."""
+        for row in range(min(len(saved_state), self.grid_rows)):
+            for col in range(min(len(saved_state[row]), self.grid_cols)):
+                self.game.grid[row][col] = saved_state[row][col]  # Restore the cell state
+        self.grid_canvas.draw_grid()  # Redraw the grid with the updated states
+    
+    def zoom_in(self):
+        """Zoom in by increasing the square size and redrawing the grid."""
+        if self.settings["square_size"] < 50:  # Set a maximum square size
+            saved_state = self.get_current_grid_state()  # Save the current grid state
+            self.settings["square_size"] += 5  # Increment square size
+            self.update_grid()  # Update the grid size and redraw
+            self.apply_grid_state(saved_state)  # Restore the saved state
+
+    def zoom_out(self):
+        """Zoom out by decreasing the square size and redrawing the grid."""
+        if self.settings["square_size"] > 5:  # Set a minimum square size
+            saved_state = self.get_current_grid_state()  # Save the current grid state
+            self.settings["square_size"] -= 5  # Decrease square size
+            self.update_grid()  # Update the grid size and redraw
+            self.apply_grid_state(saved_state)  # Restore the saved state
+
+    
+    def reset_zoom(self):
+        """Reset the zoom level to the default square size."""
+        saved_state = self.get_current_grid_state()  # Save the current grid state
+        self.settings["square_size"] = self.default_square_size  # Reset square size to default
+        self.update_grid()  # Update the grid size and redraw
+        self.apply_grid_state(saved_state)  # Restore the saved state
+    
     def update_grid(self):
-        self.grid_rows = self.settings_window.rows_slider.get()
-        self.grid_cols = self.settings_window.cols_slider.get()
-        self.settings["square_size"] = self.settings_window.square_size_slider.get()
+        self.grid_width = self.width - self.panel_size
+        self.grid_height = self.height
 
+        # Update the number of rows and columns based on the new square size
+        self.grid_rows = self.grid_height // self.settings['square_size']
+        self.grid_cols = self.grid_width // self.settings['square_size']
+
+        # Update the canvas size to reflect the new grid dimensions
         self.grid_canvas.update_canvas_size(self.grid_width, self.grid_height)
+
+        # Reinitialize the game grid with the new dimensions
         self.game = GameOfLife(self.grid_rows, self.grid_cols)
-        self.grid_canvas.draw_grid()
+        
+        self.grid_canvas.draw_grid()  # Redraw the grid
+
+
+    # def start_drag(self, event):
+    #     """Called when the user presses the mouse button to start dragging."""
+    #     self.is_dragging = True
+    #     self.drag_start_x = event.x  # Store the starting x-coordinate
+    #     self.drag_start_y = event.y  # Store the starting y-coordinate
+
+    # def do_drag(self, event):
+    #     """Called when the user is dragging the grid."""
+    #     if self.is_dragging:
+    #         # Calculate how much the cursor moved
+    #         move_x = event.x - self.drag_start_x
+    #         move_y = event.y - self.drag_start_y
+
+    #         # Update grid offsets based on the movement
+    #         self.grid_offset_x += move_x
+    #         self.grid_offset_y += move_y
+
+    #         # Store the new cursor position as the starting point for the next move
+    #         self.drag_start_x = event.x
+    #         self.drag_start_y = event.y
+
+    #         # Redraw the grid with the new offset
+    #         self.grid_canvas.draw_grid(self.grid_offset_x, self.grid_offset_y)
+
+    # def end_drag(self, event):
+    #     """Called when the user releases the mouse button to stop dragging."""
+    #     self.is_dragging = False
 
     def reset_game(self):
         self.game.reset()
