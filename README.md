@@ -42,14 +42,17 @@ python app.py
 4. Click "Reset" to clear the grid and start over.
 5. Adjust the simulation speed using the slider.
 
+
 ## Rules of the Game
 1. Any live cell with fewer than two live neighbours dies (underpopulation).
 2. Any live cell with two or three live neighbours lives on to the next generation.
 3. Any live cell with more than three live neighbours dies (overpopulation).
 4. Any dead cell with exactly three live neighbours becomes a live cell (reproduction).
 
+
 ## Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.
+
 
 ## Authors
 - [Ali JBARI](https://github.com/ila36IX)
