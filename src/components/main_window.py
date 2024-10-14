@@ -5,7 +5,6 @@ from tkinter import Toplevel, Scale, Label, StringVar, OptionMenu, simpledialog
 from .game_of_life import GameOfLife
 from .game_controls import GameControls
 from .grid_canvas import GridCanvas
-from .settings_window import SettingsWindow
 from .patterns import Patterns
 
 pygame.mixer.init()
@@ -94,7 +93,7 @@ class GameOfLifeMainWindow:
             "Glider gun": Patterns.glider_gun(),
         }
 
-        # # Initialize volume settings
+        # Initialize volume settings
         self.volume = 0.5  # Initial volume (0.0 to 1.0)
         self.is_muted = False
 
@@ -103,7 +102,6 @@ class GameOfLifeMainWindow:
         self.game = GameOfLife(self.grid_rows, self.grid_cols)
 
         self.game_controls = GameControls(self)
-        self.settings_window = SettingsWindow(self)
 
         self.grid_canvas.draw_grid()  # Draw the initial grid
 
@@ -117,10 +115,8 @@ class GameOfLifeMainWindow:
 
         # Set up UI elements
         self.create_widgets()
-        self.volume_button = StylishButton(self.control_frame, text="Mute", command=self.toggle_mute)
-        self.volume_button.pack(side=ctk.TOP, padx=10, pady=5)
-
-
+        self.volume_button = StylishButton(self.control_frame, text="Mute", command=self.toggle_mute, fg_color="#3CBBB1", hover_color="#FFFFFF")
+        self.volume_button.pack(side=ctk.TOP, padx=10, pady=10)
 
     def set_volume(self, value):
         """Set the volume based on the slider value and update the label."""
@@ -145,6 +141,7 @@ class GameOfLifeMainWindow:
         self.is_muted = not self.is_muted
 
     def create_widgets(self):
+        
         # Control frame to hold buttons
         self.control_frame = ctk.CTkFrame(self.root, width=self.panel_size, corner_radius=10)
         self.control_frame.pack_propagate(False)
@@ -153,22 +150,14 @@ class GameOfLifeMainWindow:
         # Define button color
         button_color = "#3CBBB1"
 
-        # Control buttons
-        StylishButton(self.control_frame, text="Start", command=self.start_game, fg_color=button_color, hover_color="#FFFFFF").pack(side=ctk.TOP, padx=10, pady=5)
-        StylishButton(self.control_frame, text="Stop", command=self.stop_game, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
-        StylishButton(self.control_frame, text="Reset", command=self.reset_game, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
-        StylishButton(self.control_frame, text="Reset to Initial", command=self.reset_to_initial, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
-        StylishButton(self.control_frame, text="Settings", command=self.open_settings, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
-        StylishButton(self.control_frame, text="Save Pattern", command=self.save_pattern, fg_color=button_color, hover_color="#329C94").pack(side=ctk.TOP, padx=10, pady=5)
-        
-        # Volume control button
-        self.volume_button = StylishButton(self.control_frame, text="Mute", command=self.toggle_mute, fg_color=button_color, hover_color="#329C94")
-        self.volume_button.pack(side=ctk.TOP, padx=10, pady=5)
+        # Add buttons using a helper function to reduce redundancy
+        self.create_stylish_button("Start", self.start_game, button_color, "#FFFFFF")
+        self.create_stylish_button("Stop", self.stop_game, button_color, "#329C94")
+        self.create_stylish_button("Reset", self.reset_game, button_color, "#329C94")
+        self.create_stylish_button("Save Pattern", self.save_pattern, button_color, "#329C94")
 
         # Volume slider
-
         self.volume_slider = ctk.CTkSlider(self.control_frame, from_=0, to=1, command=self.set_volume)
-        #  = Scale(self.control_frame, from_=0, to=1, resolution=0.1, orient='horizontal', command=self.set_volume)
         self.volume_slider.set(self.volume)  # Set initial volume
         self.volume_slider.pack(side=ctk.TOP, padx=10, pady=5)
 
@@ -178,21 +167,36 @@ class GameOfLifeMainWindow:
         self.volume_label = ctk.CTkLabel(self.control_frame, textvariable=self.sound_volume_label)
         self.volume_label.pack()
 
-
-        # Pattern selection dropdown
+        # Pattern selection dropdown using CTkOptionMenu
         self.pattern_var = StringVar(self.root)
         self.pattern_var.set("None")
-        self.pattern_dropdown = OptionMenu(self.control_frame, self.pattern_var, *self.patterns.keys(), command=self.load_pattern)
-        self.pattern_dropdown.pack(side=ctk.LEFT, padx=10, pady=5)
+
+        self.pattern_dropdown = ctk.CTkOptionMenu(
+            self.control_frame,
+            variable=self.pattern_var,
+            values=list(self.patterns.keys()),  # Pass the patterns as a list of values
+            command=self.load_pattern,
+            fg_color=button_color,  # Matching color with the buttons
+            button_color=button_color,
+            button_hover_color="#329C94",  # Optional: color on hover
+        )
+        self.pattern_dropdown.pack(side=ctk.TOP, padx=10, pady=10)
+
+
+    def create_stylish_button(self, text, command, fg_color, hover_color):
+        StylishButton(
+            self.control_frame, text=text,
+            command=command,
+            fg_color=fg_color,
+            hover_color=hover_color,
+            font=("Helvetica", 25, "bold")
+        ).pack(side=ctk.TOP, padx=10, pady=5)
 
     def load_pattern(self, selected_pattern):
         if selected_pattern in self.patterns:
             self.game.reset()
             self.game.load_pattern(self.patterns[selected_pattern], self.grid_rows // 2, self.grid_cols // 2)
             self.grid_canvas.draw_grid()
-
-    def open_settings(self):
-        self.settings_window.open()
 
     def save_pattern(self):
         pattern_name = simpledialog.askstring("Save Pattern", "Enter a name for your pattern:")
@@ -206,19 +210,12 @@ class GameOfLifeMainWindow:
         self.grid_cols = self.settings_window.cols_slider.get()
         self.settings["square_size"] = self.settings_window.square_size_slider.get()
 
-        self.grid_canvas.update_canvas_size(self.grid_width, self.grid_height)
-        self.game = GameOfLife(self.grid_rows, self.grid_cols)
-        self.grid_canvas.draw_grid()
-
     def reset_game(self):
         self.game.reset()
         self.grid_canvas.draw_grid()
 
-    def reset_to_initial(self):
-        self.grid_canvas.draw_grid()
-
     def run_game(self):
-        if hasattr(self, 'is_running') and self.is_running:  # Check if is_running is defined
+        if hasattr(self, 'is_running') and self.is_running:
             self.game.update()
             self.grid_canvas.draw_grid()
             self.root.after(self.settings["simulation_speed"], self.run_game)
@@ -229,7 +226,7 @@ class GameOfLifeMainWindow:
 
     def stop_game(self):
         self.is_running = False
-
+    
     def cell_click(self, event):
         # Determine the cell that was clicked
         square_size = self.settings["square_size"]
@@ -241,5 +238,7 @@ class GameOfLifeMainWindow:
             self.game.toggle_cell(row, col)
             self.grid_canvas.draw_grid()  # Redraw the grid after toggling
 
+
     def run(self):
-        self.root.mainloop()  # Ensure this method exists to run the main loop
+        self.root.mainloop()
+
