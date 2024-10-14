@@ -340,6 +340,28 @@ class GameOfLifeMainWindow:
         self.update_grid()  # Update the grid size and redraw
         self.apply_grid_state(saved_state)  # Restore the saved state
     
+    def do_drag(self, event):
+        """Called when the user is dragging the grid."""
+        if self.is_dragging:
+            # Calculate how much the cursor moved
+            move_x = event.x - self.drag_start_x
+            move_y = event.y - self.drag_start_y
+
+            # Update grid offsets based on the movement
+            self.grid_offset_x += move_x
+            self.grid_offset_y += move_y
+
+            # Store the new cursor position as the starting point for the next move
+            self.drag_start_x = event.x
+            self.drag_start_y = event.y
+
+            # Redraw the grid with the new offset
+            self.grid_canvas.draw_grid(self.grid_offset_x, self.grid_offset_y)
+
+    def end_drag(self, event):
+        """Called when the user releases the mouse button to stop dragging."""
+        self.is_dragging = False
+    
     def update_grid(self):
         self.grid_rows = self.settings_window.rows_slider.get()
         self.grid_cols = self.settings_window.cols_slider.get()
