@@ -19,6 +19,7 @@ class GameOfLifeMainWindow:
     PATTERNS_FILE = "data/patterns.json"
     patterns = {}
     changed_cells = []
+    is_running = False
     def __init__(self):
         """Initialize the main window and set default parameters.
 
@@ -46,15 +47,27 @@ class GameOfLifeMainWindow:
             "square_size": 20,
             "simulation_speed": 500
         }
-
+        self.default_square_size = self.settings["square_size"]  # Store default zoom level
+        self.is_dragging = False
+        self.drag_start_x = 0
+        self.drag_start_y = 0
+        self.grid_offset_x = 0  # X-offset for panning the grid
+        self.grid_offset_y = 0  # Y-offset for panning the grid
+        
         # load patterns
         self.patterns = Patterns.get_patterns()
         self.load_patterns()
 
         self.panel_size = self.width // 6
 
+        self.grid_width = self.width - self.panel_size
+        self.grid_height = self.height
+
+        self.grid_rows = self.grid_height // self.settings['square_size']
+        self.grid_cols = self.grid_width // self.settings['square_size']
+        
         # # Initialize volume settings
-        self.volume = 0.5  # Initial volume (0.0 to 1.0)
+        self.volume = 0.2  # Initial volume (0.0 to 1.0)
         self.is_muted = False
         self.show_intro_window()
 
@@ -136,6 +149,10 @@ class GameOfLifeMainWindow:
         # Set up UI elements
         self.create_widgets()
 
+    def get_current_grid_state(self):
+        """Retrieve the current state of the grid (alive/dead cells)."""
+        return [[self.game.grid[row][col] for col in range(self.grid_cols)] for row in range(self.grid_rows)]
+
     def set_speed(self, value):
         """Set the volume based on the slider value and update the label."""
         volume = int(value)  # Convert the string value to float
@@ -198,12 +215,14 @@ class GameOfLifeMainWindow:
         ).pack(padx=10, pady=(40, 5))
 
         for button_text, command in [
-            # ("Start", self.start_game),
             ("Stop", self.stop_game),
             ("Reset", self.reset_game),
             ("Clear", self.clear),
             ("Save Pattern", self.save_pattern),
-            ("Next Generation", self.next_gen)
+            ("Next Generation", self.next_gen),
+            ("Zoom In", self.zoom_in),
+            ("Zoom Out", self.zoom_out),
+            ("Reset Zoom", self.reset_zoom),
         ]:
             StylishButton(
                 self.control_frame,
@@ -277,11 +296,6 @@ class GameOfLifeMainWindow:
             command=self.load_pattern
         )
         self.pattern_dropdown.pack(pady=30)  # Adjust padding as necessary
-        # Optional: If you want to add a resolution entry below the dropdown
-        # self.resolution_entry = ctk.CTkEntry(self.dropdown_frame, width=100)
-        # self.resolution_entry.insert(0, "0.1")
-        # self.resolution_entry.pack(pady=5)  # Adjust padding as necessary
-
         self.help_button = ctk.CTkButton(self.control_frame, text="?",
                                          width=50, height=50,
                                          corner_radius=25,
@@ -323,15 +337,54 @@ class GameOfLifeMainWindow:
             self.save_patterns()
             self.pattern_dropdown.configure(values=list(self.patterns.keys()))
 
+    def apply_grid_state(self, saved_state):
+        """Apply the previously saved grid state back to the game grid."""
+        for row in range(min(len(saved_state), self.grid_rows)):
+            for col in range(min(len(saved_state[row]), self.grid_cols)):
+                self.game.grid[row][col] = saved_state[row][col]  # Restore the cell state
+        self.grid_canvas.draw_grid()  # Redraw the grid with the updated states
+    
+    def zoom_in(self):
+        """Zoom in by increasing the square size and redrawing the grid."""
+        if self.settings["square_size"] < 50:  # Set a maximum square size
+            saved_state = self.get_current_grid_state()  # Save the current grid state
+            self.settings["square_size"] += 5  # Increment square size
+            self.update_grid()  # Update the grid size and redraw
+            self.apply_grid_state(saved_state)  # Restore the saved state
+
+    def zoom_out(self):
+        """Zoom out by decreasing the square size and redrawing the grid."""
+        if self.settings["square_size"] > 5:  # Set a minimum square size
+            saved_state = self.get_current_grid_state()  # Save the current grid state
+            self.settings["square_size"] -= 5  # Decrease square size
+            self.update_grid()  # Update the grid size and redraw
+            self.apply_grid_state(saved_state)  # Restore the saved state
+
+    
+    def reset_zoom(self):
+        """Reset the zoom level to the default square size."""
+        saved_state = self.get_current_grid_state()  # Save the current grid state
+        self.settings["square_size"] = self.default_square_size  # Reset square size to default
+        self.update_grid()  # Update the grid size and redraw
+        self.apply_grid_state(saved_state)  # Restore the saved state
+    
     def update_grid(self):
         """Update the grid dimensions based on settings specified in the settings window.
 
         Resizes the game grid accordingly to reflect the changes made by the user.
         """
 
+        # Update the number of rows and columns based on the new square size
+        self.grid_rows = self.grid_height // self.settings['square_size']
+        self.grid_cols = self.grid_width // self.settings['square_size']
+
+        # Update the canvas size to reflect the new grid dimensions
         self.grid_canvas.update_canvas_size(self.grid_width, self.grid_height)
+
+        # Reinitialize the game grid with the new dimensions
         self.game = GameOfLife(self.grid_rows, self.grid_cols)
-        self.grid_canvas.draw_grid()
+        
+        self.grid_canvas.draw_grid()  # Redraw the grid
 
     def reset_game(self):
         """Reset the game state and reload the current pattern into the grid.
@@ -339,6 +392,7 @@ class GameOfLifeMainWindow:
         Clears the grid and sets it to the initial configuration of the current pattern.
         """
         self.game.reset()
+        self.game.load_pattern(self.current_pattern, self.grid_rows, self.grid_cols)
         self.grid_canvas.draw_grid()
 
     def clear(self):
@@ -350,7 +404,10 @@ class GameOfLifeMainWindow:
         self.grid_canvas.draw_grid()
 
     def start_game(self):
+        if self.is_running:
+            return
         self.is_running = True
+        self.current_pattern = [row[:] for row in self.game.grid[:]]
         self.run_game()
 
     def stop_game(self):
@@ -391,7 +448,8 @@ class GameOfLifeMainWindow:
         """
         if hasattr(self, 'is_running') and self.is_running:  # Check if is_running is defined
             changed_cells = self.game.update_game_grid(self.grid_canvas)
-            self.grid_canvas.update_grid(changed_cells, self.game.grid)
+            if changed_cells:
+                self.grid_canvas.update_grid(changed_cells, self.game.grid)
             self.root.after(self.settings["simulation_speed"], self.run_game)
     
     def validate_data_direcory(self):
@@ -452,10 +510,10 @@ class GameOfLifeMainWindow:
 
 4. Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction."""
 
-        rules_label = ctk.CTkLabel(rules_window, text=title, wraplength=550, justify=tk.CENTER, font=('System', 20))
+        rules_label = ctk.CTkLabel(rules_window, text=title, wraplength=500, justify=tk.CENTER, font=('System', 20))
         rules_label.pack(pady=20, padx=5)
 
-        rules_label = ctk.CTkLabel(rules_window, text=rules_text, justify=tk.CENTER, font=('System', 20))
+        rules_label = ctk.CTkLabel(rules_window, text=rules_text, wraplength=500, justify=tk.CENTER, font=('System', 20))
         rules_label.pack(pady=20, padx=5)
 
         close_button = ctk.CTkButton(rules_window, text="Close", command=rules_window.destroy)
