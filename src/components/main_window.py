@@ -65,11 +65,13 @@ class GameOfLifeMainWindow:
     sound_volume_label = None
     PATTERNS_FILE = "data/patterns.json"
     patterns = {}
+    changed_cells = []
     def __init__(self):
         ctk.set_appearance_mode("System")  # Set to "Dark" or "Light" mode as needed
         ctk.set_default_color_theme("blue")  # Set the default color theme
 
         self.root = ctk.CTk()  # Change to CustomTkinter main window
+        self.root.withdraw() 
         self.root.title("Game of Life")
         self.width = self.root.winfo_screenwidth()
         self.height = self.root.winfo_screenheight()
@@ -78,7 +80,7 @@ class GameOfLifeMainWindow:
         # Default settings
         self.settings = {
             "square_size": 20,
-            "simulation_speed": 500
+            "simulation_speed": 1
         }
 
         # load patterns
@@ -91,21 +93,20 @@ class GameOfLifeMainWindow:
         self.volume = 0.5  # Initial volume (0.0 to 1.0)
         self.is_muted = False
         self.show_intro_window()
-        self.init_game()
 
     def show_intro_window(self):
         # Create the introductory window
-        intro_window = Toplevel(self.root)
-        intro_window.title("Welcome to the Game of Life")
-        intro_window.geometry("400x300")
-        intro_window.configure(bg="#F3F8F2")
+        self.intro_window = Toplevel(self.root)
+        self.intro_window.title("Welcome to the Game of Life")
+        self.intro_window.geometry("400x300")
+        self.intro_window.configure(bg="#F3F8F2")
 
         # Message label
-        message_label = ctk.CTkLabel(intro_window, text="Welcome to the Game of Life!\n\nClick 'Play' to start the game.", bg_color="#3581B8")
+        message_label = ctk.CTkLabel(self.intro_window, text="Welcome to the Game of Life!\n\nClick 'Play' to start the game.", bg_color="#3581B8")
         message_label.pack(pady=20)
 
         # Play button
-        play_button = StylishButton(intro_window, text="Play", command=intro_window.destroy)
+        play_button = StylishButton(self.intro_window, text="Play", command=self.on_intro_window_close)
         play_button.pack(pady=10)
 
         # Center the introductory window on the screen
@@ -113,16 +114,19 @@ class GameOfLifeMainWindow:
         screen_height = self.root.winfo_screenheight()
         x = (screen_width / 2) - (400 / 2)
         y = (screen_height / 2) - (300 / 2)
-        intro_window.geometry(f"+{int(x)}+{int(y)}")
+        self.intro_window.geometry(f"+{int(x)}+{int(y)}")
 
         # Ensure that the main window is disabled until the intro window is closed
         # self.root.withdraw()  # Hide the main window
-        intro_window.protocol("WM_DELETE_WINDOW", self.on_intro_window_close)
+        self.intro_window.protocol("WM_DELETE_WINDOW", self.on_intro_window_close)
 
 
     def on_intro_window_close(self):
         # Show the main window again if the intro window is closed
+        if self.intro_window:
+            self.intro_window.destroy()
         self.root.deiconify()  # Show the main window
+        self.init_game()
         pygame.mixer.music.unpause()  # Resume music if paused
 
     def init_game(self):
@@ -150,6 +154,11 @@ class GameOfLifeMainWindow:
         # Set up UI elements
         self.create_widgets()
 
+    def set_speed(self, value):
+        """Set the volume based on the slider value and update the label."""
+        volume = int(value)  # Convert the string value to float
+        # Update the sound volume label
+        self.settings["simulation_speed"] = volume
 
 
     def set_volume(self, value):
@@ -219,6 +228,10 @@ class GameOfLifeMainWindow:
         self.pattern_var.set("Select a Pattern")
         self.pattern_dropdown = OptionMenu(self.dropdown_frame, self.pattern_var, *self.patterns.keys(), command=self.load_pattern)
         self.pattern_dropdown.pack(padx=10, pady=5)  # Adjust padding as necessary
+
+        self.speeed_slider = ctk.CTkSlider(self.control_frame, from_=1, to=500, command=self.set_speed)
+        self.speeed_slider.set(self.settings["simulation_speed"])  # Set initial volume
+        self.speeed_slider.pack(side=ctk.TOP, padx=10, pady=5)
 
         # Optional: If you want to add a resolution entry below the dropdown
         # self.resolution_entry = ctk.CTkEntry(self.dropdown_frame, width=100)
