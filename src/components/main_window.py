@@ -224,7 +224,10 @@ class GameOfLifeMainWindow:
             ("Reset", self.reset_game),
             ("Reset to Initial", self.reset_to_initial),
             ("Settings", self.open_settings),
-            ("Save Pattern", self.save_pattern)
+            ("Save Pattern", self.save_pattern),
+            ("Zoom In", self.zoom_in),
+            ("Zoom Out", self.zoom_out),
+            ("Reset Zoom", self.reset_zoom),
         ]:
             StylishButton(
                 self.control_frame,
