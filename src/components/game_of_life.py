@@ -1,36 +1,49 @@
 from random import randint
 class GameOfLife:
+    """The GameOfLife class simulates Conway's Game of Life.
+    
+    Attributes:
+        rows (int): Number of rows in the grid.
+        cols (int): Number of columns in the grid.
+        grid (list of lists): The current grid representing the state of the game.
+        r_range (tuple): Range of rows where cells are alive.
+        c_range (tuple): Range of columns where cells are alive.
+    """
     def __init__(self, rows, cols):
+        """Initializes the GameOfLife with a grid of dead cells.
+
+        Args:
+            rows (int): Number of rows in the grid.
+            cols (int): Number of columns in the grid.
+        """
         self.rows = rows
         self.cols = cols
         self.reset_range()
         self.grid = self.create_grid()
-        self.alive_cells = set()
 
     def create_grid(self):
+        """Creates an empty grid (all cells dead).
+
+        Returns:
+            list of lists: A grid with all cells set to 0 (dead).
+        """
         return [[0 for _ in range(self.cols)] for _ in range(self.rows)]
-        # return [[randint(0, 1) for _ in range(self.cols)] for _ in range(self.rows)]
 
-    def toggle_cell(self, row, col):
-        self.grid[row][col] = 1 - self.grid[row][col]
-
-    def update(self):
-        new_grid = self.create_grid()
-        for r in range(self.rows):
-            for c in range(self.cols):
-                alive_neighbors = self.count_alive_neighbors(r, c)
-                if self.grid[r][c] == 1:  # Cell is alive
-                    new_grid[r][c] = 1 if alive_neighbors in (2, 3) else 0
-                else:  # Cell is dead
-                    new_grid[r][c] = 1 if alive_neighbors == 3 else 0
-        self.grid = new_grid
 
     def reset_range(self):
+        """Resets the row and column range of the live cells."""
         self.r_range = (0, self.rows)
         self.c_range = (0, self.cols)
 
     def update_game_grid(self, canvas):
-        # TODO: add a start and end points in grid update
+        """Updates the game grid on the canvas by checking which cells should change.
+
+        Args:
+            canvas: The canvas on which the game grid is drawn.
+
+        Returns:
+            list: A list of cells that have changed state.
+        """
         range_d = self.get_matrix_range(self.rows, self.cols)
         if not range_d:
             return None
@@ -59,20 +72,16 @@ class GameOfLife:
                     new.append((r, c, 1))
         return new
 
-    # def update_game_grid(self):
-    #     # new_grid = self.create_grid()
-    #     # TODO: add a start and end points in grid update
-    #     new = []
-    #     for r in range(self.rows):
-    #         for c in range(self.cols):
-    #             alive_neighbors = self.count_alive_neighbors(r, c)
-    #             if self.grid[r][c] == 1 and alive_neighbors not in (2, 3):  # Cell is alive and has too few or too many neighbors
-    #                 new.append((r, c, 0))
-    #             elif self.grid[r][c] == 0 and alive_neighbors == 3:  # Cell is dead and has exactly 3 neighbors
-    #                 new.append((r, c, 1))
-    #     return new
-
     def count_alive_neighbors(self, row, col):
+        """Counts the number of alive neighbors for a given cell.
+
+        Args:
+            row (int): Row index of the cell.
+            col (int): Column index of the cell.
+
+        Returns:
+            int: Number of alive neighbors.
+        """
         directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
         count = 0
         for d in directions:
@@ -82,9 +91,17 @@ class GameOfLife:
         return count
 
     def reset(self):
+        """Resets the grid to an all-dead state."""
         self.grid = self.create_grid()
 
     def load_pattern(self, pattern, rows, cols):
+        """Loads a pattern into the center of the grid.
+
+        Args:
+            pattern (list of lists): A 2D pattern to be placed in the grid.
+            rows (int): Number of rows in the grid.
+            cols (int): Number of columns in the grid.
+        """
         if not pattern:
             return
         patt_rows = len(pattern)
@@ -99,6 +116,16 @@ class GameOfLife:
                     self.grid[row_start + row_n][col_start + col_n] = 1
 
     def get_matrix_range(self, rows, cols):
+        """Gets the range of the grid that contains live cells.
+
+        Args:
+            rows (int): Number of rows in the grid.
+            cols (int): Number of columns in the grid.
+
+        Returns:
+            dict or None: A dictionary containing the range of rows and columns
+                          where live cells are located, or None if no live cells exist.
+        """
         self.matrix_range = {"top": -1, "bottom": -1, "left": -1, "right": -1}
 
         for r in range(rows):
