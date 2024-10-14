@@ -157,9 +157,9 @@ class GameOfLifeMainWindow:
     def init_game(self):
         # Initialize game and components
         self.grid_canvas = GridCanvas(self)
-        self.grid_canvas.canvas.bind("<ButtonPress-1>", self.start_drag)  # Bind left mouse button press
-        self.grid_canvas.canvas.bind("<B1-Motion>", self.do_drag)        # Bind mouse movement (while button 1 is held)
-        self.grid_canvas.canvas.bind("<ButtonRelease-1>", self.end_drag)  # Bind left mouse button release
+        # self.grid_canvas.canvas.bind("<ButtonPress-1>", self.start_drag)  # Bind left mouse button press
+        # self.grid_canvas.canvas.bind("<B1-Motion>", self.do_drag)        # Bind mouse movement (while button 1 is held)
+        # self.grid_canvas.canvas.bind("<ButtonRelease-1>", self.end_drag)  # Bind left mouse button release
         self.grid_width = self.grid_canvas.canvas.winfo_width() - self.panel_size
         self.grid_height = self.grid_canvas.canvas.winfo_height()
         self.grid_rows = self.grid_height // self.settings['square_size']
@@ -368,50 +368,50 @@ class GameOfLifeMainWindow:
         self.update_grid()  # Update the grid size and redraw
         self.apply_grid_state(saved_state)  # Restore the saved state
     
-    def update_grid(self):
-        self.grid_width = self.width - self.panel_size
-        self.grid_height = self.height
+    # def update_grid(self):
+    #     self.grid_width = self.width - self.panel_size
+    #     self.grid_height = self.height
 
-        # Update the number of rows and columns based on the new square size
-        self.grid_rows = self.grid_height // self.settings['square_size']
-        self.grid_cols = self.grid_width // self.settings['square_size']
+    #     # Update the number of rows and columns based on the new square size
+    #     self.grid_rows = self.grid_height // self.settings['square_size']
+    #     self.grid_cols = self.grid_width // self.settings['square_size']
 
-        # Update the canvas size to reflect the new grid dimensions
-        self.grid_canvas.update_canvas_size(self.grid_width, self.grid_height)
+    #     # Update the canvas size to reflect the new grid dimensions
+    #     self.grid_canvas.update_canvas_size(self.grid_width, self.grid_height)
 
-        # Reinitialize the game grid with the new dimensions
-        self.game = GameOfLife(self.grid_rows, self.grid_cols)
+    #     # Reinitialize the game grid with the new dimensions
+    #     self.game = GameOfLife(self.grid_rows, self.grid_cols)
         
-        self.grid_canvas.draw_grid()  # Redraw the grid
+    #     self.grid_canvas.draw_grid()  # Redraw the grid
 
 
-    def start_drag(self, event):
-        """Called when the user presses the mouse button to start dragging."""
-        self.is_dragging = True
-        self.drag_start_x = event.x  # Store the starting x-coordinate
-        self.drag_start_y = event.y  # Store the starting y-coordinate
+    # def start_drag(self, event):
+    #     """Called when the user presses the mouse button to start dragging."""
+    #     self.is_dragging = True
+    #     self.drag_start_x = event.x  # Store the starting x-coordinate
+    #     self.drag_start_y = event.y  # Store the starting y-coordinate
 
-    def do_drag(self, event):
-        """Called when the user is dragging the grid."""
-        if self.is_dragging:
-            # Calculate how much the cursor moved
-            move_x = event.x - self.drag_start_x
-            move_y = event.y - self.drag_start_y
+    # def do_drag(self, event):
+    #     """Called when the user is dragging the grid."""
+    #     if self.is_dragging:
+    #         # Calculate how much the cursor moved
+    #         move_x = event.x - self.drag_start_x
+    #         move_y = event.y - self.drag_start_y
 
-            # Update grid offsets based on the movement
-            self.grid_offset_x += move_x
-            self.grid_offset_y += move_y
+    #         # Update grid offsets based on the movement
+    #         self.grid_offset_x += move_x
+    #         self.grid_offset_y += move_y
 
-            # Store the new cursor position as the starting point for the next move
-            self.drag_start_x = event.x
-            self.drag_start_y = event.y
+    #         # Store the new cursor position as the starting point for the next move
+    #         self.drag_start_x = event.x
+    #         self.drag_start_y = event.y
 
-            # Redraw the grid with the new offset
-            self.grid_canvas.draw_grid(self.grid_offset_x, self.grid_offset_y)
+    #         # Redraw the grid with the new offset
+    #         self.grid_canvas.draw_grid(self.grid_offset_x, self.grid_offset_y)
 
-    def end_drag(self, event):
-        """Called when the user releases the mouse button to stop dragging."""
-        self.is_dragging = False
+    # def end_drag(self, event):
+    #     """Called when the user releases the mouse button to stop dragging."""
+    #     self.is_dragging = False
 
     def reset_game(self):
         self.game.reset()
