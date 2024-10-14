@@ -31,7 +31,8 @@ class GridCanvas:
                 y1 = row * self.main_window.settings["square_size"]
                 x2 = x1 + self.main_window.settings["square_size"]
                 y2 = y1 + self.main_window.settings["square_size"]
-                color = "#ff00e2" if self.main_window.game.grid[row][col] == 1 else "#16123a"
+                color = "#ff00e2" \
+                    if self.main_window.game.grid[row][col] == 1 else "#16123a"
                 cell = self.canvas.create_oval(
                     x1 + extra, y1 + extra, x2 - extra, y2 - extra, fill=color)
                 cells_row.append(cell)

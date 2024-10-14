@@ -7,7 +7,8 @@ class GameOfLife:
     Attributes:
         rows (int): Number of rows in the grid.
         cols (int): Number of columns in the grid.
-        grid (list of lists): The current grid representing the state of the game.
+        grid (list of lists): The current grid representing
+        the state of the game.
         r_range (tuple): Range of rows where cells are alive.
         c_range (tuple): Range of columns where cells are alive.
     """
@@ -38,7 +39,8 @@ class GameOfLife:
         self.c_range = (0, self.cols)
 
     def update_game_grid(self, canvas):
-        """Updates the game grid on the canvas by checking which cells should change.
+        """Updates the game grid on the canvas by checking
+        which cells should change.
 
         Args:
             canvas: The canvas on which the game grid is drawn.
@@ -65,7 +67,7 @@ class GameOfLife:
         for r in range(rs, re + 1):
             for c in range(cs, ce + 1):
                 alive_neighbors = self.count_alive_neighbors(r, c)
-                if self.grid[r][c] == 1:  # Cell is alive and has too few or too many neighbors
+                if self.grid[r][c] == 1:
                     if alive_neighbors not in (2, 3):
                         new.append((r, c, 0))
                     else:
@@ -129,7 +131,8 @@ class GameOfLife:
 
         Returns:
             dict or None: A dictionary containing the range of rows and columns
-                          where live cells are located, or None if no live cells exist.
+                          where live cells are located,
+                          or None if no live cells exist.
         """
         self.matrix_range = {"top": -1, "bottom": -1, "left": -1, "right": -1}
 

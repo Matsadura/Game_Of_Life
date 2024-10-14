@@ -3,7 +3,8 @@ import customtkinter as ctk
 
 class StylishButton(ctk.CTkButton):
     """
-    A custom button class with a smooth color transition effect using CustomTkinter.
+    A custom button class with a smooth color transition
+    effect using CustomTkinter.
 
     Attributes:
         default_background (str): The default background color of the button.
@@ -11,7 +12,8 @@ class StylishButton(ctk.CTkButton):
         hover_color (str): The color the button transitions to when hovered.
         transition_steps (int): The number of steps for the color transition.
         current_step (int): Tracks the current step during the transition.
-        after_id (int or None): Stores the ID of the scheduled after call for the transition.
+        after_id (int or None): Stores the ID of the scheduled after call
+        for the transition.
     """
 
     def __init__(self, master, **kwargs):
@@ -32,7 +34,8 @@ class StylishButton(ctk.CTkButton):
 
     def transition_color(self, start_color, end_color):
         """
-        Gradually transitions the button's background color from start_color to end_color.
+        Gradually transitions the button's background color
+        from start_color to end_color.
 
         Parameters:
             start_color (str): The initial color in hex format.
@@ -49,7 +52,12 @@ class StylishButton(ctk.CTkButton):
 
         # Update the button color
         if self.current_step <= self.transition_steps:
-            new_color = f'#{int(start_rgb[0] + step_r * self.current_step):02x}{int(start_rgb[1] + step_g * self.current_step):02x}{int(start_rgb[2] + step_b * self.current_step):02x}'
+            new_color = (
+                f'#{int(start_rgb[0] + step_r * self.current_step):02x}' +
+                f'{int(start_rgb[1] + step_g * self.current_step):02x}' +
+                f'{int(start_rgb[2] + step_b * self.current_step):02x}'
+            )
+
             self.configure(fg_color=new_color)
             self.current_step += 1
             self.after_id = self.after(int(20), lambda: self.transition_color(
