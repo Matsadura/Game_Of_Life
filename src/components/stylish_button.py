@@ -1,5 +1,6 @@
 import customtkinter as ctk
 
+
 class StylishButton(ctk.CTkButton):
     """
     A custom button class with a smooth color transition effect using CustomTkinter.
@@ -12,6 +13,7 @@ class StylishButton(ctk.CTkButton):
         current_step (int): Tracks the current step during the transition.
         after_id (int or None): Stores the ID of the scheduled after call for the transition.
     """
+
     def __init__(self, master, **kwargs):
         """
         Initialize the StylishButton with color transition functionality.
@@ -50,9 +52,11 @@ class StylishButton(ctk.CTkButton):
             new_color = f'#{int(start_rgb[0] + step_r * self.current_step):02x}{int(start_rgb[1] + step_g * self.current_step):02x}{int(start_rgb[2] + step_b * self.current_step):02x}'
             self.configure(fg_color=new_color)
             self.current_step += 1
-            self.after_id = self.after(int(20), lambda: self.transition_color(start_color, end_color))  # Schedule the next color update
+            self.after_id = self.after(int(20), lambda: self.transition_color(
+                start_color, end_color))  # Schedule the next color update
         else:
-            self.after_cancel(self.after_id)  # Cancel the after call if it exists
+            # Cancel the after call if it exists
+            self.after_cancel(self.after_id)
 
     def hex_to_rgb(self, hex_color):
         """
@@ -64,7 +68,7 @@ class StylishButton(ctk.CTkButton):
         Returns:
             tuple: The RGB representation of the color as a tuple (R, G, B).
         """
-        if type(hex_color) is not str:
+        if not isinstance(hex_color, str):
             return (255, 255, 255)
         hex_color = hex_color.lstrip('#')
         return tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
