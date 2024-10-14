@@ -15,11 +15,10 @@ pygame.mixer.init()
 class GameOfLifeMainWindow:
     """The main window of the game"""
     sound_volume_label = None
+    speed_label_state = None
     PATTERNS_FILE = "data/patterns.json"
     patterns = {}
     changed_cells = []
-    current_pattern = None
-    is_running = False
     def __init__(self):
         """Initialize the main window and set default parameters.
 
@@ -45,7 +44,7 @@ class GameOfLifeMainWindow:
         # Default settings
         self.settings = {
             "square_size": 20,
-            "simulation_speed": 1
+            "simulation_speed": 500
         }
 
         # load patterns
@@ -131,6 +130,7 @@ class GameOfLifeMainWindow:
 
         # Create volume control button
         self.sound_volume_label = ctk.StringVar(value=f"Volume {int(self.volume * 100)}%")
+        self.speed_label_state = ctk.StringVar(value=f"Speed {501 - self.settings["simulation_speed"]}")
 
         # Set up UI elements
         self.create_widgets()
@@ -140,6 +140,7 @@ class GameOfLifeMainWindow:
         volume = int(value)  # Convert the string value to float
         # Update the sound volume label
         self.settings["simulation_speed"] = volume
+        self.speed_label_state.set(value=f"Speed {501 - int(value)}")
 
 
     def set_volume(self, value):
@@ -176,7 +177,7 @@ class GameOfLifeMainWindow:
         Includes control buttons, volume control, and a pattern selection dropdown.
         """
         # Control frame to hold buttons
-        self.control_frame = ctk.CTkFrame(self.root, fg_color=self.colors["background"],width=self.panel_size, corner_radius=10)
+        self.control_frame = ctk.CTkFrame(self.root, fg_color=self.colors["background"], border_color=self.colors['primary'], border_width=1, width=self.panel_size, corner_radius=10)
         self.control_frame.pack_propagate(False)
         self.control_frame.pack(side=ctk.RIGHT, expand=False, fill=ctk.Y)
 
@@ -229,13 +230,31 @@ class GameOfLifeMainWindow:
         )
 
 
-        # Scale(self.control_frame, from_=0, to=1, resolution=0.1, orient='horizontal', command=self.set_volume)
+        #  = Scale(self.control_frame, from_=0, to=1, resolution=0.1, orient='horizontal', command=self.set_volume)
         self.volume_slider.set(self.volume)  # Set initial volume
-        self.volume_slider.pack(side=ctk.TOP, padx=10, pady=5)
+        self.volume_slider.pack(side=ctk.TOP, padx=10, pady=(30, 0))
 
         # Volume label
         self.volume_label = ctk.CTkLabel(self.control_frame, font=("System", 18), textvariable=self.sound_volume_label)
         self.volume_label.pack(side=ctk.TOP, padx=10, pady=5)
+
+
+        # Speed slider logic
+        self.speeed_slider = ctk.CTkSlider(
+            self.control_frame,
+            fg_color=self.colors.get('secondary'),
+            progress_color=self.colors.get("primary"),
+            button_color=self.colors.get('primary'),
+            button_hover_color='#ffffff',
+            from_=500,
+            to=1,
+            command=self.set_speed
+        )
+        self.speeed_slider.set(self.settings["simulation_speed"])  # Set initial volume
+        self.speeed_slider.pack(side=ctk.TOP, padx=10, pady=(20, 0))
+
+        self.speed_label = ctk.CTkLabel(self.control_frame, font=("System", 18), textvariable=self.speed_label_state)
+        self.speed_label.pack(side=ctk.TOP, padx=10, pady=0)
 
         # Pattern selection dropdown
         self.pattern_var = StringVar(self.root)
@@ -255,10 +274,11 @@ class GameOfLifeMainWindow:
             dropdown_font=('System', 18),
             command=self.load_pattern
         )
-        self.pattern_dropdown.pack(side="bottom", pady=30)  # Adjust padding as necessary
-        self.speeed_slider = ctk.CTkSlider(self.control_frame, from_=1, to=500, command=self.set_speed)
-        self.speeed_slider.set(self.settings["simulation_speed"])  # Set initial volume
-        self.speeed_slider.pack(side=ctk.TOP, padx=10, pady=5)
+        self.pattern_dropdown.pack(pady=30)  # Adjust padding as necessary
+        # Optional: If you want to add a resolution entry below the dropdown
+        # self.resolution_entry = ctk.CTkEntry(self.dropdown_frame, width=100)
+        # self.resolution_entry.insert(0, "0.1")
+        # self.resolution_entry.pack(pady=5)  # Adjust padding as necessary
 
     def save_pattern(self):
         """Prompt the user to enter a name for the current pattern and save it.
@@ -302,7 +322,6 @@ class GameOfLifeMainWindow:
         Clears the grid and sets it to the initial configuration of the current pattern.
         """
         self.game.reset()
-        self.game.load_pattern(self.current_pattern, self.grid_rows, self.grid_cols)
         self.grid_canvas.draw_grid()
 
     def clear(self):
@@ -314,10 +333,7 @@ class GameOfLifeMainWindow:
         self.grid_canvas.draw_grid()
 
     def start_game(self):
-        if self.is_running:
-            return
         self.is_running = True
-        self.current_pattern = [row[:] for row in self.game.grid[:]]
         self.run_game()
 
     def stop_game(self):
@@ -358,8 +374,7 @@ class GameOfLifeMainWindow:
         """
         if hasattr(self, 'is_running') and self.is_running:  # Check if is_running is defined
             changed_cells = self.game.update_game_grid(self.grid_canvas)
-            if changed_cells:
-                self.grid_canvas.update_grid(changed_cells, self.game.grid)
+            self.grid_canvas.update_grid(changed_cells, self.game.grid)
             self.root.after(self.settings["simulation_speed"], self.run_game)
     
     def validate_data_direcory(self):
