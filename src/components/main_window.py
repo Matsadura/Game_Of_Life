@@ -9,8 +9,10 @@ from .settings_window import SettingsWindow
 from .patterns import Patterns
 import json
 import os
+from PIL import Image
 
 pygame.mixer.init()
+
 
 
 class StylishButton(ctk.CTkButton):
@@ -23,16 +25,16 @@ class StylishButton(ctk.CTkButton):
         self.current_step = 0  # Track the current step of the transition
         self.after_id = None  # Track the after call
 
-        self.bind("<Enter>", self.on_enter)
-        self.bind("<Leave>", self.on_leave)
+        # self.bind("<Enter>", self.on_enter)
+        # self.bind("<Leave>", self.on_leave)
 
-    def on_enter(self, e):
-        self.current_step = 0  # Reset step on enter
-        self.transition_color(self.default_background, self.hover_color)
+    # def on_enter(self, e):
+    #     self.current_step = 0  # Reset step on enter
+    #     self.transition_color(self.default_background, self.hover_color)
 
-    def on_leave(self, e):
-        self.current_step = 0  # Reset step on leave
-        self.transition_color(self.hover_color, self.default_background)
+    # def on_leave(self, e):
+    #     self.current_step = 0  # Reset step on leave
+    #     self.transition_color(self.hover_color, self.default_background)
 
     def transition_color(self, start_color, end_color):
         # Split the color into RGB components
@@ -75,6 +77,12 @@ class GameOfLifeMainWindow:
         self.height = self.root.winfo_screenheight()
         self.root.geometry(f'{self.width}x{self.height}')
 
+        self.colors = {
+            "background": "#100D28",
+            "primary": "#ff00e2",
+            "secondary": "#8906e6"
+        }
+
         # Default settings
         self.settings = {
             "square_size": 20,
@@ -98,15 +106,22 @@ class GameOfLifeMainWindow:
 
         self.intro_window = Toplevel(self.root)
         self.intro_window.title("Welcome to the Game of Life")
-        self.intro_window.geometry("400x300")
-        self.intro_window.configure(bg="#F3F8F2")
-
-        # Message label
-        message_label = ctk.CTkLabel(self.intro_window, text="Welcome to the Game of Life!\n\nClick 'Play' to start the game.", bg_color="#3581B8")
-        message_label.pack(pady=20)
+        self.intro_window.geometry("600x700")
+        self.intro_window.configure(bg=self.colors.get("background"))
+        image = ctk.CTkImage(dark_image=Image.open("assets/images/welcoming-window.png"), size=(450, 450))
+        logo = ctk.CTkLabel(self.intro_window, image=image, text="")
+        logo.pack(pady=10)
 
         # Play button
-        play_button = StylishButton(self.intro_window, text="Play", command=self.on_intro_window_close)
+        play_button = ctk.CTkButton(self.intro_window,
+            fg_color=self.colors["primary"],
+            font=("System", 20),
+            width=300,
+            height=40,
+            hover_color=self.colors["secondary"],
+            text="PLAY",
+            command=self.on_intro_window_close
+        )
         play_button.pack(pady=10)
 
         # Center the introductory window on the screen
@@ -178,30 +193,58 @@ class GameOfLifeMainWindow:
 
     def create_widgets(self):
         # Control frame to hold buttons
-        self.control_frame = ctk.CTkFrame(self.root, width=self.panel_size, corner_radius=10)
+        self.control_frame = ctk.CTkFrame(self.root, fg_color=self.colors["background"],width=self.panel_size, corner_radius=10)
         self.control_frame.pack_propagate(False)
         self.control_frame.pack(side=ctk.RIGHT, expand=False, fill=ctk.Y)
 
         # Define button color
-        button_color = "#3CBBB1"
 
         # Control buttons
+        # I did this to make the botton not stcking in the top
+        StylishButton(
+            self.control_frame,
+            text="Start",
+            fg_color=self.colors["primary"],
+            width=200,
+            height=40,
+            font=("System", 20),
+            hover_color=self.colors.get("secondary"),
+            command=self.start_game,
+        ).pack(padx=10, pady=(40, 5))
+
         for button_text, command in [
-            ("Start", self.start_game),
+            # ("Start", self.start_game),
             ("Stop", self.stop_game),
             ("Reset", self.reset_game),
             ("Reset to Initial", self.reset_to_initial),
             ("Settings", self.open_settings),
             ("Save Pattern", self.save_pattern)
         ]:
-            StylishButton(self.control_frame, text=button_text, command=command, fg_color=button_color, hover_color="#FFFFFF").pack(side=ctk.TOP, padx=10, pady=5)
+            StylishButton(
+                self.control_frame,
+                text=button_text,
+                command=command,
+                fg_color=self.colors["secondary"],
+                width=200,
+                height=40,
+                font=("System", 20),
+                hover_color=self.colors.get("primary"),
+            ).pack(padx=10, pady=5)
 
         # Volume control button
-        self.volume_button = StylishButton(self.control_frame, text="Mute", command=self.toggle_mute, fg_color=button_color, hover_color="#FFFFFF")
+        self.volume_button = StylishButton(self.control_frame, text="Mute", command=self.toggle_mute, fg_color=self.colors["secondary"], font=("System", 20), hover_color=self.colors.get("background"), width=200, height=40)
         self.volume_button.pack(side=ctk.TOP, padx=10, pady=5)
 
         # Volume slider
-        self.volume_slider = ctk.CTkSlider(self.control_frame, from_=0, to=1, command=self.set_volume)
+        self.volume_slider = ctk.CTkSlider(self.control_frame,
+            fg_color=self.colors.get('secondary'),
+            progress_color=self.colors.get("primary"),
+            button_color=self.colors.get('primary'),
+            button_hover_color='#ffffff',
+            from_=0,
+            to=1,
+            command=self.set_volume
+        )
 
 
         #  = Scale(self.control_frame, from_=0, to=1, resolution=0.1, orient='horizontal', command=self.set_volume)
@@ -209,18 +252,29 @@ class GameOfLifeMainWindow:
         self.volume_slider.pack(side=ctk.TOP, padx=10, pady=5)
 
         # Volume label
-        self.volume_label = ctk.CTkLabel(self.control_frame, textvariable=self.sound_volume_label)
+        self.volume_label = ctk.CTkLabel(self.control_frame, font=("System", 18), textvariable=self.sound_volume_label)
         self.volume_label.pack(side=ctk.TOP, padx=10, pady=5)
 
-        # Create a frame for the pattern selection dropdown to center it
-        self.dropdown_frame = ctk.CTkFrame(self.control_frame)  # New frame for the dropdown
-        self.dropdown_frame.pack(side=ctk.TOP, pady=10)  # Center vertically within the control frame
 
         # Pattern selection dropdown
         self.pattern_var = StringVar(self.root)
-        self.pattern_var.set("Select a Pattern")
-        self.pattern_dropdown = OptionMenu(self.dropdown_frame, self.pattern_var, *self.patterns.keys(), command=self.load_pattern)
-        self.pattern_dropdown.pack(padx=10, pady=5)  # Adjust padding as necessary
+        self.pattern_var.set("Select...")
+        self.pattern_dropdown = ctk.CTkOptionMenu(
+            self.control_frame,
+            font=('System', 20),
+            button_color=self.colors.get('primary'),
+            button_hover_color=self.colors.get('secondary'),
+            fg_color=self.colors.get('secondary'),
+            width=200,
+            height=40,
+            variable=self.pattern_var,
+            values=list(self.patterns.keys()),
+            dropdown_fg_color=self.colors.get('background'),
+            dropdown_hover_color=self.colors.get('primary'),
+            dropdown_font=('System', 18),
+            command=self.load_pattern
+        )
+        self.pattern_dropdown.pack(side="bottom", pady=30)  # Adjust padding as necessary
 
         # Optional: If you want to add a resolution entry below the dropdown
         # self.resolution_entry = ctk.CTkEntry(self.dropdown_frame, width=100)
