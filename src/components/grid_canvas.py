@@ -1,16 +1,16 @@
 import tkinter as tk
 
 class GridCanvas:
+    cells = []
     def __init__(self, main_window):
         self.main_window = main_window
         self.canvas = tk.Canvas(
             self.main_window.root,
-            width=main_window.grid_width,
-            height=main_window.grid_height,
             borderwidth=2,
             highlightbackground="black"
         )
         self.canvas.pack(side="left", fill="both", expand=True)  # Allow canvas to expand and center in the window
+        self.canvas.update()
         self.canvas.bind("<Button-1>", self.main_window.cell_click)  # Bind click event to cell_click
 
         # Track panning offsets
@@ -52,7 +52,7 @@ class GridCanvas:
 
     def draw_grid(self, offset_x=0, offset_y=0, preserve_state=False):
         square_size = self.main_window.settings["square_size"]
-
+        self.cells.clear()
         # Update offsets for panning
         self.offset_x += offset_x
         self.offset_y += offset_y
@@ -72,6 +72,7 @@ class GridCanvas:
         end_row = min(self.main_window.grid_rows, (canvas_height - self.offset_y) // square_size + 1)
 
         for row in range(start_row, end_row):
+            cells_row = []
             for col in range(start_col, end_col):
                 x1 = col * square_size + self.offset_x
                 y1 = row * square_size + self.offset_y
@@ -85,7 +86,16 @@ class GridCanvas:
                     fill_color = "white"  # Dead cells
 
                 # Draw the cell
-                self.canvas.create_rectangle(x1, y1, x2, y2, outline="gray", fill=fill_color)
+                cell = self.canvas.create_rectangle(x1, y1, x2, y2, outline="gray", fill=fill_color)
+                cells_row.append(cell)
+            self.cells.append(cells_row)
+
+    def update_grid(self, changed_cells, grid):
+        for r, c, status in changed_cells:
+            color = "black" if status == 1 else "white"
+            grid[r][c] = status
+            self.canvas.itemconfig(self.cells[r][c], fill=color)
+
 
     def update_canvas_size(self, new_width, new_height):
         """Update the size of the canvas when the window is resized."""
