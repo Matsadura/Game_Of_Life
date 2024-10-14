@@ -67,11 +67,13 @@ class GameOfLifeMainWindow:
     sound_volume_label = None
     PATTERNS_FILE = "data/patterns.json"
     patterns = {}
+    changed_cells = []
     def __init__(self):
         ctk.set_appearance_mode("System")  # Set to "Dark" or "Light" mode as needed
         ctk.set_default_color_theme("blue")  # Set the default color theme
 
         self.root = ctk.CTk()  # Change to CustomTkinter main window
+        self.root.withdraw() 
         self.root.title("Game of Life")
         self.width = self.root.winfo_screenwidth()
         self.height = self.root.winfo_screenheight()
@@ -86,7 +88,7 @@ class GameOfLifeMainWindow:
         # Default settings
         self.settings = {
             "square_size": 20,
-            "simulation_speed": 500
+            "simulation_speed": 1
         }
 
         # load patterns
@@ -99,11 +101,9 @@ class GameOfLifeMainWindow:
         self.volume = 0.5  # Initial volume (0.0 to 1.0)
         self.is_muted = False
         self.show_intro_window()
-        self.init_game()
 
     def show_intro_window(self):
         # Create the introductory window
-
         self.intro_window = Toplevel(self.root)
         self.intro_window.title("Welcome to the Game of Life")
         self.intro_window.geometry("600x700")
@@ -132,14 +132,15 @@ class GameOfLifeMainWindow:
         self.intro_window.geometry(f"+{int(x)}+{int(y)}")
 
         # Ensure that the main window is disabled until the intro window is closed
-        self.root.withdraw()  # Hide the main window
-        # intro_window.protocol("WM_DELETE_WINDOW", self.on_intro_window_close)
+        self.intro_window.protocol("WM_DELETE_WINDOW", self.on_intro_window_close)
 
 
     def on_intro_window_close(self):
         # Show the main window again if the intro window is closed
-        self.intro_window.destroy()
+        if self.intro_window:
+            self.intro_window.destroy()
         self.root.deiconify()  # Show the main window
+        self.init_game()
         pygame.mixer.music.unpause()  # Resume music if paused
 
     def init_game(self):
@@ -167,6 +168,11 @@ class GameOfLifeMainWindow:
         # Set up UI elements
         self.create_widgets()
 
+    def set_speed(self, value):
+        """Set the volume based on the slider value and update the label."""
+        volume = int(value)  # Convert the string value to float
+        # Update the sound volume label
+        self.settings["simulation_speed"] = volume
 
 
     def set_volume(self, value):
@@ -276,6 +282,10 @@ class GameOfLifeMainWindow:
         )
         self.pattern_dropdown.pack(side="bottom", pady=30)  # Adjust padding as necessary
 
+        self.speeed_slider = ctk.CTkSlider(self.control_frame, from_=1, to=500, command=self.set_speed)
+        self.speeed_slider.set(self.settings["simulation_speed"])  # Set initial volume
+        self.speeed_slider.pack(side=ctk.TOP, padx=10, pady=5)
+
         # Optional: If you want to add a resolution entry below the dropdown
         # self.resolution_entry = ctk.CTkEntry(self.dropdown_frame, width=100)
         # self.resolution_entry.insert(0, "0.1")
@@ -338,15 +348,17 @@ class GameOfLifeMainWindow:
 
         # Toggle the state of the clicked cell
         if 0 <= row < self.grid_rows and 0 <= col < self.grid_cols:
-            self.game.toggle_cell(row, col)
-            self.grid_canvas.draw_grid()  # Redraw the grid after toggling
+            current_cell = self.game.grid[row][col]
+            color = "#ff00e2" if current_cell == 0 else "#191541"
+            self.game.grid[row][col] = 1 if current_cell == 0 else 0
+            self.grid_canvas.canvas.itemconfig(self.grid_canvas.cells[row][col], fill=color)
 
     def run(self):
         self.root.mainloop()  # Ensure this method exists to run the main loop
 
     def run_game(self):
         if hasattr(self, 'is_running') and self.is_running:  # Check if is_running is defined
-            changed_cells = self.game.update_game_grid()
+            changed_cells = self.game.update_game_grid(self.grid_canvas)
             self.grid_canvas.update_grid(changed_cells, self.game.grid)
             self.root.after(self.settings["simulation_speed"], self.run_game)
     
