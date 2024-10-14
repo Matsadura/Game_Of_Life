@@ -1,6 +1,8 @@
 # Conway's Game of Life
-
+![](https://raw.githubusercontent.com/Matsadura/Game_Of_Life/refs/heads/dev/assets/images/logo-with-background.png)
 ## Description
+
+![](https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzdwdGdyNTd1eDloM3hycnhmZjV1OHR2ejJsMTRkeWliaDFkN3Y2dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/LO50zBkNczE6vtQXuS/giphy.gif)
 This project is an implementation of John Conway's Game of Life using Python and the customtkinter library. The Game of Life is a cellular automaton simulation where cells on a grid evolve over time based on a set of rules.
 
 ## Features
@@ -26,7 +28,34 @@ This project is an implementation of John Conway's Game of Life using Python and
    ```
 3. Install the required packages:
    ```
-   pip install customtkinter
+   pip install -r requirements.txt
+
+### Optional: Using a Virtual Environment
+If you prefer to use a virtual environment for isolated package management:
+
+1. Create a virtual environment:
+   ```
+   python -m venv venv
+   ```
+
+2. Activate the virtual environment:
+
+   1. On Windows:
+      ```
+      venv\Scripts\activate
+      ```
+
+   2. On macOS and Linux:
+      ```
+      source venv/bin/activate
+      ```
+3. Install the required packages in the virtual environment:
+   ```
+   pip install -r requirements.txt
+   ```
+4. When you're done, you can deactivate the virtual environment:
+   ```
+   deactivate
    ```
 
 ## Usage
