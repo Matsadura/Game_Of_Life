@@ -105,10 +105,15 @@ class GameOfLifeMainWindow:
         play_button.pack(pady=10)
 
         # Center the introductory window on the screen
+        self.intro_window.update_idletasks()
+        window_width = self.intro_window.winfo_width()
+        window_height = self.intro_window.winfo_height()
+
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
-        x = (screen_width / 2) - (400 / 2)
-        y = (screen_height / 2) - (300 / 2)
+
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
         self.intro_window.geometry(f"+{int(x)}+{int(y)}")
 
         # Ensure that the main window is disabled until the intro window is
