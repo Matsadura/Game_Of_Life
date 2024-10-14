@@ -1,10 +1,10 @@
 import customtkinter as ctk
 import tkinter as tk
 import pygame
-from tkinter import Toplevel, Scale, Label, StringVar, OptionMenu, simpledialog, messagebox
+from tkinter import Toplevel, StringVar, simpledialog, messagebox
 from .game_of_life import GameOfLife
-from .game_controls import GameControls
 from .grid_canvas import GridCanvas
+from .stylish_button import StylishButton
 from .patterns import Patterns
 import json
 import os
@@ -12,62 +12,20 @@ from PIL import Image
 
 pygame.mixer.init()
 
-
-
-class StylishButton(ctk.CTkButton):
-    def __init__(self, master, **kwargs):
-        super().__init__(master, **kwargs)
-        self.default_background = self.cget("fg_color")
-        self.default_foreground = self.cget("text_color")
-        self.hover_color = "#3CBBB1"  # Color when hovered
-        self.transition_steps = 20  # Number of steps for the transition
-        self.current_step = 0  # Track the current step of the transition
-        self.after_id = None  # Track the after call
-
-        # self.bind("<Enter>", self.on_enter)
-        # self.bind("<Leave>", self.on_leave)
-
-    # def on_enter(self, e):
-    #     self.current_step = 0  # Reset step on enter
-    #     self.transition_color(self.default_background, self.hover_color)
-
-    # def on_leave(self, e):
-    #     self.current_step = 0  # Reset step on leave
-    #     self.transition_color(self.hover_color, self.default_background)
-
-    def transition_color(self, start_color, end_color):
-        # Split the color into RGB components
-        start_rgb = self.hex_to_rgb(start_color)
-        end_rgb = self.hex_to_rgb(end_color)
-
-        # Calculate the difference between the two colors
-        step_r = (end_rgb[0] - start_rgb[0]) / self.transition_steps
-        step_g = (end_rgb[1] - start_rgb[1]) / self.transition_steps
-        step_b = (end_rgb[2] - start_rgb[2]) / self.transition_steps
-
-        # Update the button color
-        if self.current_step <= self.transition_steps:
-            new_color = f'#{int(start_rgb[0] + step_r * self.current_step):02x}{int(start_rgb[1] + step_g * self.current_step):02x}{int(start_rgb[2] + step_b * self.current_step):02x}'
-            self.configure(fg_color=new_color)
-            self.current_step += 1
-            self.after_id = self.after(int(20), lambda: self.transition_color(start_color, end_color))  # Schedule the next color update
-        else:
-            self.after_cancel(self.after_id)  # Cancel the after call if it exists
-
-    def hex_to_rgb(self, hex_color):
-        """Convert a hex color to RGB tuple."""
-        if type(hex_color) is not str:
-            return (255, 255, 255)
-        hex_color = hex_color.lstrip('#')
-        return tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
-
-
 class GameOfLifeMainWindow:
+    """The main window of the game"""
     sound_volume_label = None
+    speed_label_state = None
     PATTERNS_FILE = "data/patterns.json"
     patterns = {}
     changed_cells = []
+    is_running = False
     def __init__(self):
+        """Initialize the main window and set default parameters.
+
+        Sets the appearance mode, color theme, sound volume, and initializes
+        the patterns. Calls methods to create widgets and show the intro window.
+        """
         ctk.set_appearance_mode("System")  # Set to "Dark" or "Light" mode as needed
         ctk.set_default_color_theme("blue")  # Set the default color theme
 
@@ -87,7 +45,7 @@ class GameOfLifeMainWindow:
         # Default settings
         self.settings = {
             "square_size": 20,
-            "simulation_speed": 1
+            "simulation_speed": 500
         }
         self.default_square_size = self.settings["square_size"]  # Store default zoom level
         self.is_dragging = False
@@ -114,6 +72,11 @@ class GameOfLifeMainWindow:
         self.show_intro_window()
 
     def show_intro_window(self):
+        """Display the introductory window with a welcome message.
+
+        This window contains a "Play" button. The main window remains hidden
+        until this window is closed.
+        """
         # Create the introductory window
         self.intro_window = Toplevel(self.root)
         self.intro_window.title("Welcome to the Game of Life")
@@ -147,6 +110,10 @@ class GameOfLifeMainWindow:
 
 
     def on_intro_window_close(self):
+        """Handle the event when the intro window is closed.
+
+        Shows the main window and initializes the game components.
+        """
         # Show the main window again if the intro window is closed
         if self.intro_window:
             self.intro_window.destroy()
@@ -155,19 +122,18 @@ class GameOfLifeMainWindow:
         pygame.mixer.music.unpause()  # Resume music if paused
 
     def init_game(self):
+        """Initialize the game components.
+
+        Sets up the grid canvas, control buttons, and background music.
+        """
         # Initialize game and components
         self.grid_canvas = GridCanvas(self)
-        # self.grid_canvas.canvas.bind("<ButtonPress-1>", self.start_drag)  # Bind left mouse button press
-        # self.grid_canvas.canvas.bind("<B1-Motion>", self.do_drag)        # Bind mouse movement (while button 1 is held)
-        # self.grid_canvas.canvas.bind("<ButtonRelease-1>", self.end_drag)  # Bind left mouse button release
         self.grid_width = self.grid_canvas.canvas.winfo_width() - self.panel_size
         self.grid_height = self.grid_canvas.canvas.winfo_height()
         self.grid_rows = self.grid_height // self.settings['square_size']
         self.grid_cols = self.grid_width // self.settings['square_size']
         self.game = GameOfLife(self.grid_rows, self.grid_cols)
-
-        self.game_controls = GameControls(self)
-
+        self.game.load_pattern(self.patterns["glider_gun"], self.grid_rows, self.grid_cols)
         self.grid_canvas.draw_grid()  # Draw the initial grid
 
         # Load and play background music
@@ -177,15 +143,22 @@ class GameOfLifeMainWindow:
 
         # Create volume control button
         self.sound_volume_label = ctk.StringVar(value=f"Volume {int(self.volume * 100)}%")
+        val = 501 - self.settings["simulation_speed"]
+        self.speed_label_state = ctk.StringVar(value=f"Speed {val}")
 
         # Set up UI elements
         self.create_widgets()
+
+    def get_current_grid_state(self):
+        """Retrieve the current state of the grid (alive/dead cells)."""
+        return [[self.game.grid[row][col] for col in range(self.grid_cols)] for row in range(self.grid_rows)]
 
     def set_speed(self, value):
         """Set the volume based on the slider value and update the label."""
         volume = int(value)  # Convert the string value to float
         # Update the sound volume label
         self.settings["simulation_speed"] = volume
+        self.speed_label_state.set(value=f"Speed {501 - int(value)}")
 
 
     def set_volume(self, value):
@@ -200,6 +173,12 @@ class GameOfLifeMainWindow:
         self.sound_volume_label.set(f"Volume: {volume_percentage}%")
 
     def toggle_mute(self):
+        """Toggle the sound volume between muted and the previous volume.
+
+        When muted, the volume is set to 0. When unmuted, it restores the 
+        volume to the level it was before muting. Updates the volume button 
+        label accordingly.
+        """
         if self.is_muted:
             pygame.mixer.music.set_volume(self.volume)  # Set back to the previous volume
             self.volume_button.configure(text="Mute")
@@ -211,8 +190,12 @@ class GameOfLifeMainWindow:
         self.is_muted = not self.is_muted
 
     def create_widgets(self):
+        """Create and pack the various UI elements.
+
+        Includes control buttons, volume control, and a pattern selection dropdown.
+        """
         # Control frame to hold buttons
-        self.control_frame = ctk.CTkFrame(self.root, fg_color=self.colors["background"],width=self.panel_size, corner_radius=10)
+        self.control_frame = ctk.CTkFrame(self.root, fg_color=self.colors["background"], border_color=self.colors['primary'], border_width=1, width=self.panel_size, corner_radius=10)
         self.control_frame.pack_propagate(False)
         self.control_frame.pack(side=ctk.RIGHT, expand=False, fill=ctk.Y)
 
@@ -232,11 +215,11 @@ class GameOfLifeMainWindow:
         ).pack(padx=10, pady=(40, 5))
 
         for button_text, command in [
-            # ("Start", self.start_game),
             ("Stop", self.stop_game),
             ("Reset", self.reset_game),
-            ("Reset to Initial", self.reset_to_initial),
+            ("Clear", self.clear),
             ("Save Pattern", self.save_pattern),
+            ("Next Generation", self.next_gen),
             ("Zoom In", self.zoom_in),
             ("Zoom Out", self.zoom_out),
             ("Reset Zoom", self.reset_zoom),
@@ -270,12 +253,29 @@ class GameOfLifeMainWindow:
 
         #  = Scale(self.control_frame, from_=0, to=1, resolution=0.1, orient='horizontal', command=self.set_volume)
         self.volume_slider.set(self.volume)  # Set initial volume
-        self.volume_slider.pack(side=ctk.TOP, padx=10, pady=5)
+        self.volume_slider.pack(side=ctk.TOP, padx=10, pady=(30, 0))
 
         # Volume label
         self.volume_label = ctk.CTkLabel(self.control_frame, font=("System", 18), textvariable=self.sound_volume_label)
         self.volume_label.pack(side=ctk.TOP, padx=10, pady=5)
 
+
+        # Speed slider logic
+        self.speeed_slider = ctk.CTkSlider(
+            self.control_frame,
+            fg_color=self.colors.get('secondary'),
+            progress_color=self.colors.get("primary"),
+            button_color=self.colors.get('primary'),
+            button_hover_color='#ffffff',
+            from_=500,
+            to=1,
+            command=self.set_speed
+        )
+        self.speeed_slider.set(self.settings["simulation_speed"])  # Set initial volume
+        self.speeed_slider.pack(side=ctk.TOP, padx=10, pady=(20, 0))
+
+        self.speed_label = ctk.CTkLabel(self.control_frame, font=("System", 18), textvariable=self.speed_label_state)
+        self.speed_label.pack(side=ctk.TOP, padx=10, pady=0)
 
         # Pattern selection dropdown
         self.pattern_var = StringVar(self.root)
@@ -295,46 +295,47 @@ class GameOfLifeMainWindow:
             dropdown_font=('System', 18),
             command=self.load_pattern
         )
-        self.pattern_dropdown.pack(side="bottom", pady=30)  # Adjust padding as necessary
+        self.pattern_dropdown.pack(pady=30)  # Adjust padding as necessary
+        self.help_button = ctk.CTkButton(self.control_frame, text="?",
+                                         width=50, height=50,
+                                         corner_radius=25,
+                                         fg_color="#007bff",
+                                         hover_color="#0056b3",
+                                         command=self.show_rules)
+        self.help_button.pack(side=tk.BOTTOM, anchor=tk.SE, padx=10, pady=10)
 
-        self.speeed_slider = ctk.CTkSlider(self.control_frame, from_=1, to=500, command=self.set_speed)
-        self.speeed_slider.set(self.settings["simulation_speed"])  # Set initial volume
-        self.speeed_slider.pack(side=ctk.TOP, padx=10, pady=5)
-
-        # Optional: If you want to add a resolution entry below the dropdown
-        # self.resolution_entry = ctk.CTkEntry(self.dropdown_frame, width=100)
-        # self.resolution_entry.insert(0, "0.1")
-        # self.resolution_entry.pack(pady=5)  # Adjust padding as necessary
-
-    def open_settings(self):
-        self.settings_window.open()
+    def next_gen(self):
+        """Go to teh next generation"""
+        changed_cells = self.game.update_game_grid(self.grid_canvas)
+        if not changed_cells:
+            return
+        self.grid_canvas.update_grid(changed_cells, self.game.grid)
 
     def save_pattern(self):
-        """ Save the current pattern to the patterns dictionary."""
+        """Prompt the user to enter a name for the current pattern and save it.
+
+        Checks for uniqueness of the name before saving the pattern to a file.
+        """
+        matrix_range = self.game.get_matrix_range(self.grid_rows, self.grid_cols)
+        if not matrix_range:
+            messagebox.showerror("Error", "The grid is empty, make sure you draw something first.")
+            return
+
         pattern_name = simpledialog.askstring("Save Pattern", "Enter a name for your pattern:")
-        if pattern_name:
+        if pattern_name == None or pattern_name.strip() == "":
+            messagebox.showerror("Error", "Please enter a name for your pattern.")
+
+        if pattern_name in self.patterns:
             # Check if the pattern name already exists
-            if pattern_name in self.patterns:
-                # Show an error message
-                messagebox.showerror("Error", f"Pattern '{pattern_name}' already exists. Please choose a different name.")
-            else:
-                matrix_range = self.game.get_matrix_range(self.grid_rows, self.grid_cols)
-
-                if matrix_range is None:
-                    messagebox.showerror("Error", f"Please give a valid pattern\nThe grid is empty")
-                    return
-
-                self.patterns[pattern_name] = [
-                    row[matrix_range["left"]:matrix_range["right"] + 1]
-                    for row in
-                    self.game.grid[matrix_range["top"]:matrix_range["bottom"] + 1]
-                    ]
-                self.save_patterns()
-                self.pattern_dropdown['menu'].add_command(label=pattern_name, command=lambda value=pattern_name: self.load_pattern(value))
-    
-    def get_current_grid_state(self):
-        """Retrieve the current state of the grid (alive/dead cells)."""
-        return [[self.game.grid[row][col] for col in range(self.grid_cols)] for row in range(self.grid_rows)]
+            messagebox.showerror("Error", f"Pattern '{pattern_name}' already exists. Please choose a different name.")
+        else:
+            self.patterns[pattern_name] = [
+                row[matrix_range["left"]:matrix_range["right"] + 1]
+                for row in
+                self.game.grid[matrix_range["top"]:matrix_range["bottom"] + 1]
+                ]
+            self.save_patterns()
+            self.pattern_dropdown.configure(values=list(self.patterns.keys()))
 
     def apply_grid_state(self, saved_state):
         """Apply the previously saved grid state back to the game grid."""
@@ -368,8 +369,10 @@ class GameOfLifeMainWindow:
         self.apply_grid_state(saved_state)  # Restore the saved state
     
     def update_grid(self):
-        self.grid_width = self.width - self.panel_size
-        self.grid_height = self.height
+        """Update the grid dimensions based on settings specified in the settings window.
+
+        Resizes the game grid accordingly to reflect the changes made by the user.
+        """
 
         # Update the number of rows and columns based on the new square size
         self.grid_rows = self.grid_height // self.settings['square_size']
@@ -383,50 +386,42 @@ class GameOfLifeMainWindow:
         
         self.grid_canvas.draw_grid()  # Redraw the grid
 
-
-    # def start_drag(self, event):
-    #     """Called when the user presses the mouse button to start dragging."""
-    #     self.is_dragging = True
-    #     self.drag_start_x = event.x  # Store the starting x-coordinate
-    #     self.drag_start_y = event.y  # Store the starting y-coordinate
-
-    # def do_drag(self, event):
-    #     """Called when the user is dragging the grid."""
-    #     if self.is_dragging:
-    #         # Calculate how much the cursor moved
-    #         move_x = event.x - self.drag_start_x
-    #         move_y = event.y - self.drag_start_y
-
-    #         # Update grid offsets based on the movement
-    #         self.grid_offset_x += move_x
-    #         self.grid_offset_y += move_y
-
-    #         # Store the new cursor position as the starting point for the next move
-    #         self.drag_start_x = event.x
-    #         self.drag_start_y = event.y
-
-    #         # Redraw the grid with the new offset
-    #         self.grid_canvas.draw_grid(self.grid_offset_x, self.grid_offset_y)
-
-    # def end_drag(self, event):
-    #     """Called when the user releases the mouse button to stop dragging."""
-    #     self.is_dragging = False
-
     def reset_game(self):
+        """Reset the game state and reload the current pattern into the grid.
+
+        Clears the grid and sets it to the initial configuration of the current pattern.
+        """
+        self.game.reset()
+        self.game.load_pattern(self.current_pattern, self.grid_rows, self.grid_cols)
+        self.grid_canvas.draw_grid()
+
+    def clear(self):
+        """Clear the current game grid.
+
+        Removes all live cells from the grid, resetting it to an empty state.
+        """
         self.game.reset()
         self.grid_canvas.draw_grid()
 
-    def reset_to_initial(self):
-        self.grid_canvas.draw_grid()
-
     def start_game(self):
+        if self.is_running:
+            return
         self.is_running = True
+        self.current_pattern = [row[:] for row in self.game.grid[:]]
         self.run_game()
 
     def stop_game(self):
+        """Start the game simulation if it is not already running.
+
+        Begins the updating of the grid based on the simulation rules.
+        """
         self.is_running = False
 
     def cell_click(self, event):
+        """Stop the game simulation.
+
+        Halts the updating of the grid and the game loop.
+        """
         # Determine the cell that was clicked
         square_size = self.settings["square_size"]
         col = event.x // square_size
@@ -440,25 +435,46 @@ class GameOfLifeMainWindow:
             self.grid_canvas.canvas.itemconfig(self.grid_canvas.cells[row][col], fill=color)
 
     def run(self):
+        """Start the main event loop for the application.
+
+        Keeps the application running and responsive to user inputs.
+        """
         self.root.mainloop()  # Ensure this method exists to run the main loop
 
     def run_game(self):
+        """Update the game grid and schedule the next update.
+
+        Processes the game logic for the current simulation step and prepares for the next iteration.
+        """
         if hasattr(self, 'is_running') and self.is_running:  # Check if is_running is defined
             changed_cells = self.game.update_game_grid(self.grid_canvas)
-            self.grid_canvas.update_grid(changed_cells, self.game.grid)
+            if changed_cells:
+                self.grid_canvas.update_grid(changed_cells, self.game.grid)
             self.root.after(self.settings["simulation_speed"], self.run_game)
     
     def validate_data_direcory(self):
+        """Check if the "data" directory exists.
+
+        Creates the directory if it does not exist to ensure proper saving/loading of patterns.
+        """
         if not os.path.exists("data"):
             os.makedirs("data")
 
     def load_patterns(self):
+        """Save the current patterns to the specified JSON file.
+
+        Excludes any default patterns and preserves user-created patterns for future use.
+        """
         if not os.path.exists(self.PATTERNS_FILE):
             return
         with open(self.PATTERNS_FILE, "r") as file:
             self.patterns.update(json.load(file))
     
     def save_patterns(self):
+        """Save the current patterns to the specified JSON file.
+
+        Excludes any default patterns and preserves user-created patterns for future use.
+        """
         new_patterns = self.patterns.copy()
         for pattern in Patterns.patterns_names():
             new_patterns.pop(pattern, None)
@@ -471,6 +487,34 @@ class GameOfLifeMainWindow:
             json.dump(new_patterns, file)
         
     def load_pattern(self, patt):
+        """Load a specific pattern into the game.
+
+        Updates the grid with the selected pattern from the available patterns.
+        """
         self.game.reset()
         self.game.load_pattern(self.patterns[patt], self.grid_rows, self.grid_cols)
         self.grid_canvas.draw_grid()
+
+    def show_rules(self):
+        """The rules of Conway's Game of Life"""
+        rules_window = ctk.CTkToplevel(self.root)
+        rules_window.title("Conway's Game of Life Rules")
+        rules_window.geometry("600x500")
+        title = "Conway's Game of Life Rules:"
+
+        rules_text = """1. Any live cell with fewer than two live neighbours dies, as if by underpopulation.
+
+2. Any live cell with two or three live neighbours lives on to the next generation.
+
+3. Any live cell with more than three live neighbours dies, as if by overpopulation.
+
+4. Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction."""
+
+        rules_label = ctk.CTkLabel(rules_window, text=title, wraplength=500, justify=tk.CENTER, font=('System', 20))
+        rules_label.pack(pady=20, padx=5)
+
+        rules_label = ctk.CTkLabel(rules_window, text=rules_text, wraplength=500, justify=tk.CENTER, font=('System', 20))
+        rules_label.pack(pady=20, padx=5)
+
+        close_button = ctk.CTkButton(rules_window, text="Close", command=rules_window.destroy)
+        close_button.pack(side=tk.BOTTOM, pady=10)

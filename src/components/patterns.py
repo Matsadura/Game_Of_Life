@@ -1,4 +1,5 @@
 class Patterns:
+    """This class containes some of the famos patterns"""
     @staticmethod
     def blinker_pattern():
         return [
