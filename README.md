@@ -3,6 +3,7 @@
 ## Description
 
 ![](https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzdwdGdyNTd1eDloM3hycnhmZjV1OHR2ejJsMTRkeWliaDFkN3Y2dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/LO50zBkNczE6vtQXuS/giphy.gif)
+
 This project is an implementation of John Conway's Game of Life using Python and the customtkinter library. The Game of Life is a cellular automaton simulation where cells on a grid evolve over time based on a set of rules.
 
 ## Features
