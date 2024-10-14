@@ -12,6 +12,7 @@ from PIL import Image
 
 pygame.mixer.init()
 
+
 class GameOfLifeMainWindow:
     """The main window of the game"""
     sound_volume_label = None
@@ -20,17 +21,20 @@ class GameOfLifeMainWindow:
     patterns = {}
     changed_cells = []
     is_running = False
+
     def __init__(self):
         """Initialize the main window and set default parameters.
 
         Sets the appearance mode, color theme, sound volume, and initializes
-        the patterns. Calls methods to create widgets and show the intro window.
+        the patterns. Calls methods to create widgets and show
+        the intro window.
         """
-        ctk.set_appearance_mode("System")  # Set to "Dark" or "Light" mode as needed
+        ctk.set_appearance_mode(
+            "System")  # Set to "Dark" or "Light" mode as needed
         ctk.set_default_color_theme("blue")  # Set the default color theme
 
         self.root = ctk.CTk()  # Change to CustomTkinter main window
-        self.root.withdraw() 
+        self.root.withdraw()
         self.root.title("Game of Life")
         self.width = self.root.winfo_screenwidth()
         self.height = self.root.winfo_screenheight()
@@ -47,13 +51,14 @@ class GameOfLifeMainWindow:
             "square_size": 20,
             "simulation_speed": 500
         }
-        self.default_square_size = self.settings["square_size"]  # Store default zoom level
+        # Store default zoom level
+        self.default_square_size = self.settings["square_size"]
         self.is_dragging = False
         self.drag_start_x = 0
         self.drag_start_y = 0
         self.grid_offset_x = 0  # X-offset for panning the grid
         self.grid_offset_y = 0  # Y-offset for panning the grid
-        
+
         # load patterns
         self.patterns = Patterns.get_patterns()
         self.load_patterns()
@@ -65,7 +70,7 @@ class GameOfLifeMainWindow:
 
         self.grid_rows = self.grid_height // self.settings['square_size']
         self.grid_cols = self.grid_width // self.settings['square_size']
-        
+
         # # Initialize volume settings
         self.volume = 0.2  # Initial volume (0.0 to 1.0)
         self.is_muted = False
@@ -82,32 +87,40 @@ class GameOfLifeMainWindow:
         self.intro_window.title("Welcome to the Game of Life")
         self.intro_window.geometry("600x700")
         self.intro_window.configure(bg=self.colors.get("background"))
-        image = ctk.CTkImage(dark_image=Image.open("assets/images/welcoming-window.png"), size=(450, 450))
+        image = ctk.CTkImage(dark_image=Image.open(
+            "assets/images/welcoming-window.png"), size=(450, 450))
         logo = ctk.CTkLabel(self.intro_window, image=image, text="")
         logo.pack(pady=10)
 
         # Play button
         play_button = ctk.CTkButton(self.intro_window,
-            fg_color=self.colors["primary"],
-            font=("System", 20),
-            width=300,
-            height=40,
-            hover_color=self.colors["secondary"],
-            text="PLAY",
-            command=self.on_intro_window_close
-        )
+                                    fg_color=self.colors["primary"],
+                                    font=("System", 20),
+                                    width=300,
+                                    height=40,
+                                    hover_color=self.colors["secondary"],
+                                    text="PLAY",
+                                    command=self.on_intro_window_close
+                                    )
         play_button.pack(pady=10)
 
         # Center the introductory window on the screen
+        self.intro_window.update_idletasks()
+        window_width = self.intro_window.winfo_width()
+        window_height = self.intro_window.winfo_height()
+
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
-        x = (screen_width / 2) - (400 / 2)
-        y = (screen_height / 2) - (300 / 2)
+
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
         self.intro_window.geometry(f"+{int(x)}+{int(y)}")
 
-        # Ensure that the main window is disabled until the intro window is closed
-        self.intro_window.protocol("WM_DELETE_WINDOW", self.on_intro_window_close)
-
+        # Ensure that the main window is disabled until the intro window is
+        # closed
+        self.intro_window.protocol(
+            "WM_DELETE_WINDOW",
+            self.on_intro_window_close)
 
     def on_intro_window_close(self):
         """Handle the event when the intro window is closed.
@@ -128,21 +141,27 @@ class GameOfLifeMainWindow:
         """
         # Initialize game and components
         self.grid_canvas = GridCanvas(self)
-        self.grid_width = self.grid_canvas.canvas.winfo_width() - self.panel_size
+        self.grid_width = self.grid_canvas.canvas.winfo_width()\
+            - self.panel_size
         self.grid_height = self.grid_canvas.canvas.winfo_height()
         self.grid_rows = self.grid_height // self.settings['square_size']
         self.grid_cols = self.grid_width // self.settings['square_size']
         self.game = GameOfLife(self.grid_rows, self.grid_cols)
-        self.game.load_pattern(self.patterns["glider_gun"], self.grid_rows, self.grid_cols)
+        self.game.load_pattern(
+            self.patterns["glider_gun"],
+            self.grid_rows,
+            self.grid_cols)
         self.grid_canvas.draw_grid()  # Draw the initial grid
 
         # Load and play background music
         pygame.mixer.init()  # Initialize the mixer
-        pygame.mixer.music.load('relaxing_piano.mp3')  # Adjust according to your file structure
+        # Adjust according to your file structure
+        pygame.mixer.music.load('relaxing_piano.mp3')
         pygame.mixer.music.play(-1)  # -1 to loop the music
 
         # Create volume control button
-        self.sound_volume_label = ctk.StringVar(value=f"Volume {int(self.volume * 100)}%")
+        self.sound_volume_label = ctk.StringVar(
+            value=f"Volume {int(self.volume * 100)}%")
         val = 501 - self.settings["simulation_speed"]
         self.speed_label_state = ctk.StringVar(value=f"Speed {val}")
 
@@ -151,7 +170,8 @@ class GameOfLifeMainWindow:
 
     def get_current_grid_state(self):
         """Retrieve the current state of the grid (alive/dead cells)."""
-        return [[self.game.grid[row][col] for col in range(self.grid_cols)] for row in range(self.grid_rows)]
+        return [[self.game.grid[row][col] for col in range(
+            self.grid_cols)] for row in range(self.grid_rows)]
 
     def set_speed(self, value):
         """Set the volume based on the slider value and update the label."""
@@ -159,7 +179,6 @@ class GameOfLifeMainWindow:
         # Update the sound volume label
         self.settings["simulation_speed"] = volume
         self.speed_label_state.set(value=f"Speed {501 - int(value)}")
-
 
     def set_volume(self, value):
         """Set the volume based on the slider value and update the label."""
@@ -175,15 +194,17 @@ class GameOfLifeMainWindow:
     def toggle_mute(self):
         """Toggle the sound volume between muted and the previous volume.
 
-        When muted, the volume is set to 0. When unmuted, it restores the 
-        volume to the level it was before muting. Updates the volume button 
+        When muted, the volume is set to 0. When unmuted, it restores the
+        volume to the level it was before muting. Updates the volume button
         label accordingly.
         """
         if self.is_muted:
-            pygame.mixer.music.set_volume(self.volume)  # Set back to the previous volume
+            # Set back to the previous volume
+            pygame.mixer.music.set_volume(self.volume)
             self.volume_button.configure(text="Mute")
         else:
-            self.volume = pygame.mixer.music.get_volume()  # Store current volume
+            # Store the current volume value
+            self.volume = pygame.mixer.music.get_volume()
             pygame.mixer.music.set_volume(0)  # Mute
             self.volume_button.configure(text="Unmute")
 
@@ -192,10 +213,17 @@ class GameOfLifeMainWindow:
     def create_widgets(self):
         """Create and pack the various UI elements.
 
-        Includes control buttons, volume control, and a pattern selection dropdown.
+        Includes control buttons, volume control,
+        and a pattern selection dropdown.
         """
         # Control frame to hold buttons
-        self.control_frame = ctk.CTkFrame(self.root, fg_color=self.colors["background"], border_color=self.colors['primary'], border_width=1, width=self.panel_size, corner_radius=10)
+        self.control_frame = ctk.CTkFrame(
+            self.root,
+            fg_color=self.colors["background"],
+            border_color=self.colors['primary'],
+            border_width=1,
+            width=self.panel_size,
+            corner_radius=10)
         self.control_frame.pack_propagate(False)
         self.control_frame.pack(side=ctk.RIGHT, expand=False, fill=ctk.Y)
 
@@ -236,29 +264,37 @@ class GameOfLifeMainWindow:
             ).pack(padx=10, pady=5)
 
         # Volume control button
-        self.volume_button = StylishButton(self.control_frame, text="Mute", command=self.toggle_mute, fg_color=self.colors["secondary"], font=("System", 20), hover_color=self.colors.get("background"), width=200, height=40)
+        self.volume_button = StylishButton(
+            self.control_frame,
+            text="Mute",
+            command=self.toggle_mute,
+            fg_color=self.colors["secondary"],
+            font=(
+                "System",
+                20),
+            hover_color=self.colors.get("background"),
+            width=200,
+            height=40)
         self.volume_button.pack(side=ctk.TOP, padx=10, pady=5)
 
         # Volume slider
-        self.volume_slider = ctk.CTkSlider(self.control_frame,
+        self.volume_slider = ctk.CTkSlider(
+            self.control_frame,
             fg_color=self.colors.get('secondary'),
             progress_color=self.colors.get("primary"),
             button_color=self.colors.get('primary'),
             button_hover_color='#ffffff',
             from_=0,
             to=1,
-            command=self.set_volume
-        )
+            command=self.set_volume)
 
-
-        #  = Scale(self.control_frame, from_=0, to=1, resolution=0.1, orient='horizontal', command=self.set_volume)
         self.volume_slider.set(self.volume)  # Set initial volume
         self.volume_slider.pack(side=ctk.TOP, padx=10, pady=(30, 0))
 
         # Volume label
-        self.volume_label = ctk.CTkLabel(self.control_frame, font=("System", 18), textvariable=self.sound_volume_label)
+        self.volume_label = ctk.CTkLabel(self.control_frame, font=(
+            "System", 18), textvariable=self.sound_volume_label)
         self.volume_label.pack(side=ctk.TOP, padx=10, pady=5)
-
 
         # Speed slider logic
         self.speeed_slider = ctk.CTkSlider(
@@ -271,10 +307,12 @@ class GameOfLifeMainWindow:
             to=1,
             command=self.set_speed
         )
-        self.speeed_slider.set(self.settings["simulation_speed"])  # Set initial volume
+        self.speeed_slider.set(
+            self.settings["simulation_speed"])  # Set initial volume
         self.speeed_slider.pack(side=ctk.TOP, padx=10, pady=(20, 0))
 
-        self.speed_label = ctk.CTkLabel(self.control_frame, font=("System", 18), textvariable=self.speed_label_state)
+        self.speed_label = ctk.CTkLabel(self.control_frame, font=(
+            "System", 18), textvariable=self.speed_label_state)
         self.speed_label.pack(side=ctk.TOP, padx=10, pady=0)
 
         # Pattern selection dropdown
@@ -312,28 +350,37 @@ class GameOfLifeMainWindow:
         self.grid_canvas.update_grid(changed_cells, self.game.grid)
 
     def save_pattern(self):
-        """Prompt the user to enter a name for the current pattern and save it.
+        """ Prompt the user to enter a name for the current pattern
+            and save it.
 
         Checks for uniqueness of the name before saving the pattern to a file.
         """
-        matrix_range = self.game.get_matrix_range(self.grid_rows, self.grid_cols)
+        matrix_range = self.game.get_matrix_range(
+            self.grid_rows, self.grid_cols)
         if not matrix_range:
-            messagebox.showerror("Error", "The grid is empty, make sure you draw something first.")
+            messagebox.showerror(
+                "Error",
+                "The grid is empty, make sure you draw something first.")
             return
 
-        pattern_name = simpledialog.askstring("Save Pattern", "Enter a name for your pattern:")
-        if pattern_name == None or pattern_name.strip() == "":
-            messagebox.showerror("Error", "Please enter a name for your pattern.")
+        pattern_name = simpledialog.askstring(
+            "Save Pattern", "Enter a name for your pattern:")
+        if pattern_name is None or pattern_name.strip() == "":
+            messagebox.showerror(
+                "Error", "Please enter a name for your pattern.")
 
         if pattern_name in self.patterns:
             # Check if the pattern name already exists
-            messagebox.showerror("Error", f"Pattern '{pattern_name}' already exists. Please choose a different name.")
+            messagebox.showerror(
+                "Error",
+                f"Pattern '{pattern_name}' already exists. \
+Please choose a different name.")
         else:
             self.patterns[pattern_name] = [
                 row[matrix_range["left"]:matrix_range["right"] + 1]
                 for row in
                 self.game.grid[matrix_range["top"]:matrix_range["bottom"] + 1]
-                ]
+            ]
             self.save_patterns()
             self.pattern_dropdown.configure(values=list(self.patterns.keys()))
 
@@ -341,13 +388,17 @@ class GameOfLifeMainWindow:
         """Apply the previously saved grid state back to the game grid."""
         for row in range(min(len(saved_state), self.grid_rows)):
             for col in range(min(len(saved_state[row]), self.grid_cols)):
-                self.game.grid[row][col] = saved_state[row][col]  # Restore the cell state
-        self.grid_canvas.draw_grid()  # Redraw the grid with the updated states
-    
+                # Restore the cell state
+                self.game.grid[row][col] = saved_state[row][col]
+
+        # Redraw the grid with the updated states
+        self.grid_canvas.draw_grid()
+
     def zoom_in(self):
         """Zoom in by increasing the square size and redrawing the grid."""
         if self.settings["square_size"] < 50:  # Set a maximum square size
-            saved_state = self.get_current_grid_state()  # Save the current grid state
+            # Save the current grid state
+            saved_state = self.get_current_grid_state()
             self.settings["square_size"] += 5  # Increment square size
             self.update_grid()  # Update the grid size and redraw
             self.apply_grid_state(saved_state)  # Restore the saved state
@@ -355,23 +406,27 @@ class GameOfLifeMainWindow:
     def zoom_out(self):
         """Zoom out by decreasing the square size and redrawing the grid."""
         if self.settings["square_size"] > 5:  # Set a minimum square size
-            saved_state = self.get_current_grid_state()  # Save the current grid state
+            # Save the current grid state
+            saved_state = self.get_current_grid_state()
             self.settings["square_size"] -= 5  # Decrease square size
             self.update_grid()  # Update the grid size and redraw
             self.apply_grid_state(saved_state)  # Restore the saved state
 
-    
     def reset_zoom(self):
         """Reset the zoom level to the default square size."""
-        saved_state = self.get_current_grid_state()  # Save the current grid state
-        self.settings["square_size"] = self.default_square_size  # Reset square size to default
+        # Save the current grid state
+        saved_state = self.get_current_grid_state()
+        # Reset square size to default
+        self.settings["square_size"] = self.default_square_size
         self.update_grid()  # Update the grid size and redraw
         self.apply_grid_state(saved_state)  # Restore the saved state
-    
-    def update_grid(self):
-        """Update the grid dimensions based on settings specified in the settings window.
 
-        Resizes the game grid accordingly to reflect the changes made by the user.
+    def update_grid(self):
+        """Update the grid dimensions based on settings specified
+        in the settings window.
+
+        Resizes the game grid accordingly to reflect the changes
+        made by the user.
         """
 
         # Update the number of rows and columns based on the new square size
@@ -383,16 +438,20 @@ class GameOfLifeMainWindow:
 
         # Reinitialize the game grid with the new dimensions
         self.game = GameOfLife(self.grid_rows, self.grid_cols)
-        
+
         self.grid_canvas.draw_grid()  # Redraw the grid
 
     def reset_game(self):
         """Reset the game state and reload the current pattern into the grid.
 
-        Clears the grid and sets it to the initial configuration of the current pattern.
+        Clears the grid and sets it to the initial configuration of
+        the current pattern.
         """
         self.game.reset()
-        self.game.load_pattern(self.current_pattern, self.grid_rows, self.grid_cols)
+        self.game.load_pattern(
+            self.current_pattern,
+            self.grid_rows,
+            self.grid_cols)
         self.grid_canvas.draw_grid()
 
     def clear(self):
@@ -432,30 +491,37 @@ class GameOfLifeMainWindow:
             current_cell = self.game.grid[row][col]
             color = "#ff00e2" if current_cell == 0 else "#191541"
             self.game.grid[row][col] = 1 if current_cell == 0 else 0
-            self.grid_canvas.canvas.itemconfig(self.grid_canvas.cells[row][col], fill=color)
+            self.grid_canvas.canvas.itemconfig(
+                self.grid_canvas.cells[row][col], fill=color)
 
     def run(self):
         """Start the main event loop for the application.
 
         Keeps the application running and responsive to user inputs.
         """
-        self.root.mainloop()  # Ensure this method exists to run the main loop
+        # Ensure this method exists to run the main loop
+        self.root.mainloop()
 
     def run_game(self):
         """Update the game grid and schedule the next update.
 
-        Processes the game logic for the current simulation step and prepares for the next iteration.
+        Processes the game logic for the current simulation step and prepares
+        for the next iteration.
         """
-        if hasattr(self, 'is_running') and self.is_running:  # Check if is_running is defined
+        # Check if is_running is defined
+        if hasattr(
+                self,
+                'is_running') and self.is_running:
             changed_cells = self.game.update_game_grid(self.grid_canvas)
             if changed_cells:
                 self.grid_canvas.update_grid(changed_cells, self.game.grid)
             self.root.after(self.settings["simulation_speed"], self.run_game)
-    
+
     def validate_data_direcory(self):
         """Check if the "data" directory exists.
 
-        Creates the directory if it does not exist to ensure proper saving/loading of patterns.
+        Creates the directory if it does not exist to ensure proper
+        saving/loading of patterns.
         """
         if not os.path.exists("data"):
             os.makedirs("data")
@@ -463,36 +529,42 @@ class GameOfLifeMainWindow:
     def load_patterns(self):
         """Save the current patterns to the specified JSON file.
 
-        Excludes any default patterns and preserves user-created patterns for future use.
+        Excludes any default patterns and preserves user-created
+        patterns for future use.
         """
         if not os.path.exists(self.PATTERNS_FILE):
             return
         with open(self.PATTERNS_FILE, "r") as file:
             self.patterns.update(json.load(file))
-    
+
     def save_patterns(self):
         """Save the current patterns to the specified JSON file.
 
-        Excludes any default patterns and preserves user-created patterns for future use.
+        Excludes any default patterns and preserves user-created
+        patterns for future use.
         """
         new_patterns = self.patterns.copy()
         for pattern in Patterns.patterns_names():
             new_patterns.pop(pattern, None)
-        
+
         if len(new_patterns) == 0:
             return
 
         self.validate_data_direcory()
         with open(self.PATTERNS_FILE, "w") as file:
             json.dump(new_patterns, file)
-        
+
     def load_pattern(self, patt):
         """Load a specific pattern into the game.
 
-        Updates the grid with the selected pattern from the available patterns.
+        Updates the grid with the selected pattern from
+        the available patterns.
         """
         self.game.reset()
-        self.game.load_pattern(self.patterns[patt], self.grid_rows, self.grid_cols)
+        self.game.load_pattern(
+            self.patterns[patt],
+            self.grid_rows,
+            self.grid_cols)
         self.grid_canvas.draw_grid()
 
     def show_rules(self):
@@ -502,19 +574,40 @@ class GameOfLifeMainWindow:
         rules_window.geometry("600x500")
         title = "Conway's Game of Life Rules:"
 
-        rules_text = """1. Any live cell with fewer than two live neighbours dies, as if by underpopulation.
+        rules_text = """1. Any live cell with fewer than two \
+live neighbours dies, as if by underpopulation.
 
-2. Any live cell with two or three live neighbours lives on to the next generation.
+2. Any live cell with two or three live neighbours lives on \
+to the next generation.
 
-3. Any live cell with more than three live neighbours dies, as if by overpopulation.
+3. Any live cell with more than three live neighbours dies, \
+as if by overpopulation.
 
-4. Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction."""
+4. Any dead cell with exactly three live neighbours becomes \
+a live cell, as if by reproduction."""
 
-        rules_label = ctk.CTkLabel(rules_window, text=title, wraplength=500, justify=tk.CENTER, font=('System', 20))
+        rules_label = ctk.CTkLabel(
+            rules_window,
+            text=title,
+            wraplength=500,
+            justify=tk.CENTER,
+            font=(
+                'System',
+                20))
         rules_label.pack(pady=20, padx=5)
 
-        rules_label = ctk.CTkLabel(rules_window, text=rules_text, wraplength=500, justify=tk.CENTER, font=('System', 20))
+        rules_label = ctk.CTkLabel(
+            rules_window,
+            text=rules_text,
+            wraplength=500,
+            justify=tk.CENTER,
+            font=(
+                'System',
+                20))
         rules_label.pack(pady=20, padx=5)
 
-        close_button = ctk.CTkButton(rules_window, text="Close", command=rules_window.destroy)
+        close_button = ctk.CTkButton(
+            rules_window,
+            text="Close",
+            command=rules_window.destroy)
         close_button.pack(side=tk.BOTTOM, pady=10)

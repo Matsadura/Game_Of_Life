@@ -1,14 +1,18 @@
 from random import randint
+
+
 class GameOfLife:
     """The GameOfLife class simulates Conway's Game of Life.
-    
+
     Attributes:
         rows (int): Number of rows in the grid.
         cols (int): Number of columns in the grid.
-        grid (list of lists): The current grid representing the state of the game.
+        grid (list of lists): The current grid representing
+        the state of the game.
         r_range (tuple): Range of rows where cells are alive.
         c_range (tuple): Range of columns where cells are alive.
     """
+
     def __init__(self, rows, cols):
         """Initializes the GameOfLife with a grid of dead cells.
 
@@ -29,14 +33,14 @@ class GameOfLife:
         """
         return [[0 for _ in range(self.cols)] for _ in range(self.rows)]
 
-
     def reset_range(self):
         """Resets the row and column range of the live cells."""
         self.r_range = (0, self.rows)
         self.c_range = (0, self.cols)
 
     def update_game_grid(self, canvas):
-        """Updates the game grid on the canvas by checking which cells should change.
+        """Updates the game grid on the canvas by checking
+        which cells should change.
 
         Args:
             canvas: The canvas on which the game grid is drawn.
@@ -63,12 +67,14 @@ class GameOfLife:
         for r in range(rs, re + 1):
             for c in range(cs, ce + 1):
                 alive_neighbors = self.count_alive_neighbors(r, c)
-                if self.grid[r][c] == 1:  # Cell is alive and has too few or too many neighbors
+                if self.grid[r][c] == 1:
                     if alive_neighbors not in (2, 3):
                         new.append((r, c, 0))
                     else:
-                        canvas.canvas.itemconfig(canvas.cells[r][c], fill="#ff00e8")
-                elif self.grid[r][c] == 0 and alive_neighbors == 3:  # Cell is dead and has exactly 3 neighbors
+                        canvas.canvas.itemconfig(
+                            canvas.cells[r][c], fill="#ff00e8")
+                # Cell is dead and has exactly 3 neighbors
+                elif self.grid[r][c] == 0 and alive_neighbors == 3:
                     new.append((r, c, 1))
         return new
 
@@ -82,7 +88,8 @@ class GameOfLife:
         Returns:
             int: Number of alive neighbors.
         """
-        directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1),
+                      (0, 1), (1, -1), (1, 0), (1, 1)]
         count = 0
         for d in directions:
             r, c = row + d[0], col + d[1]
@@ -124,7 +131,8 @@ class GameOfLife:
 
         Returns:
             dict or None: A dictionary containing the range of rows and columns
-                          where live cells are located, or None if no live cells exist.
+                          where live cells are located,
+                          or None if no live cells exist.
         """
         self.matrix_range = {"top": -1, "bottom": -1, "left": -1, "right": -1}
 
@@ -138,19 +146,24 @@ class GameOfLife:
                 self.matrix_range["bottom"] = r
                 break
 
-        if  self.matrix_range["top"] == -1 or self.matrix_range["bottom"] == -1:
+        if self.matrix_range["top"] == -1 or self.matrix_range["bottom"] == -1:
             return None
 
-        self.matrix_range["left"] = self.grid[self.matrix_range["top"]].index(1)
-        for r in range(self.matrix_range["top"] + 1, self.matrix_range["bottom"] + 1):
+        self.matrix_range["left"] = self.grid[self.matrix_range["top"]].index(
+            1)
+        for r in range(
+                self.matrix_range["top"] + 1,
+                self.matrix_range["bottom"] + 1):
             try:
                 index = self.grid[r].index(1)
                 if index < self.matrix_range["left"]:
                     self.matrix_range["left"] = index
             except ValueError:
                 continue
-        
-        for r in range(self.matrix_range["top"], self.matrix_range["bottom"] + 1):
+
+        for r in range(
+                self.matrix_range["top"],
+                self.matrix_range["bottom"] + 1):
             for c in range(cols - 1, self.matrix_range["left"] - 1, -1):
                 if self.grid[r][c] == 1 and c > self.matrix_range["right"]:
                     self.matrix_range["right"] = c
